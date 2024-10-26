@@ -20,18 +20,18 @@ module.exports.scrapeTour = (browser, url) => new Promise(async (resolve, reject
         const dayStay = items[0];
         const tourDepartureEl = el.querySelector(".card-filter-desktop__content--info-tour .info-tour-departure p");
         const timeStart = Array.from(el.querySelectorAll(".card-filter-desktop__content--info-tour .info-tour-calendar .list-item__container .list-item a")).map(item => item.textContent.trim()).toString();
-        const priceEl = el.querySelector(".card-filter-desktop__content--price .card-filter-desktop__content--price-newPrice p");
+        const priceString = el.querySelector(".card-filter-desktop__content--price .card-filter-desktop__content--price-newPrice p").textContent;
+        let priceInt = parseInt(priceString.replace(/[₫\s.]/g, ''), 10);
 
         return {
           title: titleEl ? titleEl.title : "no data",
           code: tourCodeEl ? tourCodeEl.textContent : "no data",
           image: imageEl ? imageEl.src : "no data",
-          price: priceEl ? priceEl.textContent : "no data",
+          price: priceInt,
           transportation: transportation ? transportation : "no data",
           timeStart: timeStart,
           dayStay: dayStay,
-          slug: titleEl ? titleEl.href : "no data",
-          tourDeparture: tourDepartureEl ? tourDepartureEl.textContent : "no data",
+          departure: tourDepartureEl ? tourDepartureEl.textContent : "no data",
         };
       })
       return dataTour;

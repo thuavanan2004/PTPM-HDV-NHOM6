@@ -2,15 +2,16 @@ const Category = require("../models/category.model");
 const Tour = require("../models/tour.model");
 const TourCategory = require("../models/tour-category.model");
 const sequelize = require("../config/database");
+const slugify = require("slugify");
 const {
   QueryTypes
 } = require("sequelize")
 const scrapers = require("./scraper");
+const Transportation = require("../models/transportation.model");
+const Departure = require("../models/departure.model");
 
 
 const scrapeController = async (browserInstance) => {
-  const transaction = await sequelize.transaction();
-
   try {
     let browser = await browserInstance;
     // const urlCategory = "https://travel.com.vn";
@@ -24,51 +25,88 @@ const scrapeController = async (browserInstance) => {
     // console.log('Dữ liệu Category đã được nạp thành công vào cơ sở dữ liệu!');
 
 
-    const categories = await sequelize.query('SELECT id, slug FROM Categories', {
+    const categories = await sequelize.query('SELECT id, url FROM Categories', {
       type: QueryTypes.SELECT
     });
     await Promise.all(categories.map(async (category) => {
       const categoryId = category.id;
-      const url = category.slug;
-      let dataTours = await scrapers.scrapeTour(browser, url);
+      const url = category.url;
+      let transaction;
 
-      if (dataTours && dataTours.length > 0) {
-        const createdTours = await Tour.bulkCreate(dataTours, {
-          transaction,
-          ignoreDuplicates: true
-        });
-        if (createdTours.length > 0) {
-          console.log('Dữ liệu Tour đã được nạp thành công vào cơ sở dữ liệu!');
+      try {
+        transaction = await sequelize.transaction();
+        let dataTours = await scrapers.scrapeTour(browser, url);
 
-          const tourCategories = createdTours.map(tour => ({
-            tour_id: tour.id,
-            category_id: categoryId
+        if (dataTours && dataTours.length > 0) {
+
+          const newTours = await Promise.all(dataTours.map(async (tour) => {
+            // Kiểm tra hoặc thêm transportation nếu chưa tồn tại
+            let [recordOfTransportation] = await Transportation.findOrCreate({
+              where: {
+                title: tour.transportation
+              },
+              defaults: {
+                title: tour.transportation
+              },
+              transaction
+            });
+
+            // Kiểm tra hoặc thêm departure nếu chưa tồn tại
+            let [recordOfDeparture] = await Departure.findOrCreate({
+              where: {
+                title: tour.departure
+              },
+              defaults: {
+                title: tour.departure
+              },
+              transaction
+            });
+
+            return {
+              title: tour.title,
+              code: tour.code,
+              image: tour.image,
+              price: tour.price,
+              timeStart: tour.timeStart,
+              dayStay: tour.dayStay,
+              slug: slugify(tour.title, {
+                lower: true
+              }),
+              departureId: recordOfDeparture.id,
+              transportationId: recordOfTransportation.id
+            };
           }));
+
+          const createdTours = await Tour.bulkCreate(newTours, {
+            transaction,
+            ignoreDuplicates: true
+          });
+
+          const tourCategories = createdTours.map(tour => {
+            if (tour.id != null) {
+              return {
+                tour_id: tour.id,
+                category_id: categoryId
+              }
+            }
+          }).filter(item => item !== undefined);
 
           await TourCategory.bulkCreate(tourCategories, {
             transaction
           });
-          console.log('Dữ liệu TourCategory đã được nạp thành công vào cơ sở dữ liệu!');
+
         } else {
-          console.log('Không có tour nào được thêm vào.');
+          console.log(`Không có tour nào cho danh mục ${categoryId}`);
         }
-        // console.log('Dữ liệu Tour đã được nạp thành công vào cơ sở dữ liệu!');
 
-        // const tourCategories = createdTours.map(tour => ({
-        //   tour_id: tour.id,
-        //   category_id: categoryId
-        // }));
+        await transaction.commit();
+      } catch (error) {
 
-        // await TourCategory.bulkCreate(tourCategories, {
-        //   transaction
-        // });
-        // console.log('Dữ liệu TourCategory đã được nạp thành công vào cơ sở dữ liệu!');
-      } else {
-        console.log(`Không có tour nào cho danh mục ${categoryId}`);
+        if (transaction) await transaction.rollback();
+        console.log(`Lỗi khi xử lý category ${categoryId}: ${error}`);
       }
     }));
 
-    await transaction.commit();
 
   } catch (error) {
     console.log("Lỗi ở scrape controller " + error);
