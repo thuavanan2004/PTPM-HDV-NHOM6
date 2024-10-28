@@ -25,15 +25,17 @@ const Tour = sequelize.define("Tour", {
   price: {
     type: DataTypes.INTEGER
   },
-  timeStart: {
-    type: DataTypes.TEXT
-  },
-  dayStay: {
-    type: DataTypes.STRING(255)
-  },
   status: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
+  },
+  slug: {
+    type: DataTypes.STRING(255),
+    allowNull: false,
+  },
+  isFeatured: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   destinationId: {
     type: DataTypes.INTEGER,
@@ -59,10 +61,6 @@ const Tour = sequelize.define("Tour", {
     },
     allowNull: false
   },
-  slug: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-  },
   deleted: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
@@ -70,22 +68,19 @@ const Tour = sequelize.define("Tour", {
   deletedAt: {
     type: DataTypes.DATE,
   },
+  updatedAt: {
+    type: DataTypes.DATE,
+  },
+  deletedBy: {
+    type: DataTypes.STRING(255)
+  },
+  updatedBy: {
+    type: DataTypes.STRING(255)
+  }
 }, {
   tableName: "tours",
   timestamps: true,
 })
-
-Tour.associate = (models) => {
-  Tour.belongsTo(models.Departure, {
-    foreignKey: 'departure_id'
-  });
-  Tour.belongsTo(models.Destination, {
-    foreignKey: 'destination_id'
-  });
-  Tour.belongsTo(models.Transportation, {
-    foreignKey: 'transportation_id'
-  });
-};
 
 
 module.exports = Tour;

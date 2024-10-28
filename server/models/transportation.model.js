@@ -13,6 +13,9 @@ const Transportation = sequelize.define('Transportation', {
   title: {
     type: DataTypes.STRING(255),
     unique: true
+  },
+  information: {
+    type: DataTypes.TEXT,
   }
 }, {
   tableName: 'transportation',

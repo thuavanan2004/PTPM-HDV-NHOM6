@@ -13,6 +13,12 @@ const Destination = sequelize.define('Destination', {
   title: {
     type: DataTypes.STRING(255),
     unique: true
+  },
+  information: {
+    type: DataTypes.TEXT,
+  },
+  deleted: {
+    type: DataTypes.BOOLEAN
   }
 }, {
   tableName: 'destination',

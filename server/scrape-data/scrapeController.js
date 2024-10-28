@@ -72,6 +72,7 @@ const scrapeController = async (browserInstance) => {
               slug: slugify(tour.title, {
                 lower: true
               }),
+              url: tour.url,
               departureId: recordOfDeparture.id,
               transportationId: recordOfTransportation.id
             };
@@ -107,6 +108,15 @@ const scrapeController = async (browserInstance) => {
       }
     }));
 
+
+    // Lấy tour detail
+    // const urls = await sequelize.query("SELECT url FROM tours", {
+    //   type: QueryTypes.SELECT
+    // })
+    // await Promise.all(urls.map(async (url) => {
+    //   let dataTourDetails = await scrapers.scrapeTourDetail(browser, url);
+    //   console.log(dataTourDetails);
+    // }));
 
   } catch (error) {
     console.log("Lỗi ở scrape controller " + error);

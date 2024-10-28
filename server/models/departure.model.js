@@ -13,6 +13,12 @@ const Departure = sequelize.define('Departure', {
   title: {
     type: DataTypes.STRING(255),
     unique: true
+  },
+  slug: {
+    type: DataTypes.STRING(255),
+  },
+  information: {
+    type: DataTypes.TEXT,
   }
 }, {
   tableName: 'departure',

@@ -1,7 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 dotenv.config();
-const allRoute = require("./routes/index");
+const clientRoutes = require("./routes/client/index");
 const sequelize = require("./config/database");
 const srapeData = require("./scrape-data/index");
 const cron = require('node-cron');
@@ -19,8 +19,7 @@ cron.schedule("0 20 * * *", () => {
     .then(() => console.log("Cào dữ liệu hoàn tất"))
     .catch(error => console.log("Lỗi khi cào dữ liệu:", error));
 });
-
-allRoute(app);
+clientRoutes(app);
 
 app.listen(port, () => {
   console.log(`App đang lắng nghe trên cổng ${port}`)

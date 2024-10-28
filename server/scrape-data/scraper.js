@@ -32,6 +32,7 @@ module.exports.scrapeTour = (browser, url) => new Promise(async (resolve, reject
           timeStart: timeStart,
           dayStay: dayStay,
           departure: tourDepartureEl ? tourDepartureEl.textContent : "no data",
+          url: titleEl.href + `tourcode=${tourCodeEl.textContent}`
         };
       })
       return dataTour;
@@ -73,6 +74,65 @@ module.exports.scrapeCategories = (browser, url) => new Promise(async (resolve, 
 
   } catch (error) {
     console.log("Lỗi ở hàm scrape category : " + error)
+    reject(error)
+  }
+})
+
+module.exports.scrapeTourDetail = (browser, url) => new Promise(async (resolve, reject) => {
+  try {
+    let page = await browser.newPage();
+    console.log('>> Mở tab mới ...');
+
+    await page.goto(url);
+    console.log("Truy cập vào trang " + url);
+
+    await page.waitForSelector(".tour--detail__content--left");
+    console.log('>> Website đã load xong...');
+
+    const dataTourDetail = await page.$$eval(".tour--detail__content--left > div", els => {
+      dataTourDetail = els.map(el => {
+        if (el.class == "image-gallery") {
+          var images = el.querySelectorAll("img").map(item => item.src);
+        }
+        if (el.id == "overview") {
+          var divOverview = el.querySelectorAll(".tour--detail__content--left--overview__content-item").map(div => {
+            return {
+              title: div.querySelector(".tour--detail__content--left--overview__content-title").textContent,
+              content: div.querySelector("p").textContent
+            }
+          })
+        }
+        if (el.id == "schedule") {
+          var divSchedule = el.querySelectorAll("ul.content li").map(div => {
+            return {
+              address: div.querySelector("span").textContent,
+              info: div.querySelector(".meal-inFor span p").textContent
+            }
+          })
+        }
+        if (el.id == "tour-note") {
+          var divTourNote = el.querySelectorAll("ul li").map(div => {
+            return {
+              title: div.querySelector("button").textContent,
+              info: div.querySelector("wrapper").textContent
+            }
+          })
+        }
+        return {
+          images: images,
+          divOverview: divOverview,
+          divSchedule: divSchedule,
+          divTourNote: divTourNote
+        }
+      })
+      return dataTourDetail;
+    });
+    await page.close();
+    console.log('>> Tab đã đóng.');
+    resolve(dataTourDetail);
+
+  } catch (error) {
+    console.log("Lỗi ở hàm scrape dataTourDetail : " + error)
     reject(error)
   }
 })

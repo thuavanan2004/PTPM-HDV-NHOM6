@@ -4,12 +4,12 @@ const {
 const sequelize = require('../config/database');
 
 const TourCategory = sequelize.define('TourCategory', {
-  tour_id: {
+  tourId: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     allowNull: false
   },
-  category_id: {
+  categoryId: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     allowNull: false
