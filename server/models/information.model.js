@@ -13,7 +13,7 @@ const Information = sequelize.define("Information", {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'tours',
+      model: 'Tour',
       key: 'id',
     },
   },

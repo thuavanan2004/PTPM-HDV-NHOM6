@@ -40,7 +40,7 @@ const Tour = sequelize.define("Tour", {
   destinationId: {
     type: DataTypes.INTEGER,
     references: {
-      model: 'destination',
+      model: 'Destination',
       key: 'id'
     },
     allowNull: false
@@ -48,7 +48,7 @@ const Tour = sequelize.define("Tour", {
   transportationId: {
     type: DataTypes.INTEGER,
     references: {
-      model: 'transportation',
+      model: 'Transportation',
       key: 'id'
     },
     allowNull: false
@@ -56,7 +56,7 @@ const Tour = sequelize.define("Tour", {
   departureId: {
     type: DataTypes.INTEGER,
     references: {
-      model: 'departure',
+      model: 'Departure',
       key: 'id'
     },
     allowNull: false

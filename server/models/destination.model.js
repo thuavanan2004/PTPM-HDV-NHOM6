@@ -12,7 +12,15 @@ const Destination = sequelize.define('Destination', {
   },
   title: {
     type: DataTypes.STRING(255),
-    unique: true
+    unique: true,
+    allowNull: false,
+  },
+  image: {
+    type: DataTypes.STRING(255)
+  },
+  slug: {
+    type: DataTypes.STRING(255),
+    allowNull: false,
   },
   information: {
     type: DataTypes.TEXT,

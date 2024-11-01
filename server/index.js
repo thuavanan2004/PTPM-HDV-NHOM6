@@ -1,6 +1,8 @@
 const express = require("express");
 const dotenv = require("dotenv");
 dotenv.config();
+const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser');
 const clientRoutes = require("./routes/client/index");
 const sequelize = require("./config/database");
 const srapeData = require("./scrape-data/index");
@@ -11,6 +13,9 @@ sequelize;
 
 const app = express();
 const port = process.env.PORT;
+
+app.use(bodyParser.json());
+app.use(cookieParser());
 
 cron.schedule("0 20 * * *", () => {
   console.log("Bắt đầu cào dữ liệu...");
