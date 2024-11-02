@@ -3,14 +3,118 @@ const generateCodeHelper = require("../../helpers/generateCode.helper");
 const OrderItem = require("../../models/order_item.model");
 const Order = require("../../models/orders.model");
 const Transaction = require("../../models/transactions.model");
-const sendMailHelper = require("../../helpers/sendEmail.helper");
+const sendMailHelper = require("../../helpers/sendEmailBookTour.helper");
 const moment = require("moment-timezone");
 
 const {
   QueryTypes
 } = require("sequelize");
 
-// [GET] /api/orders/book-tour
+/**
+ * @swagger
+ * /orders/book-tour:
+ *   post:
+ *     tags:
+ *       - Orders
+ *     summary: Đặt tour du lịch
+ *     description: Tạo đơn hàng và giao dịch cho việc đặt tour.
+ *     operationId: bookTour
+ *     requestBody:
+ *       description: Thông tin đơn đặt tour
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fullName
+ *               - email
+ *               - phoneNumber
+ *               - paymentMethod
+ *               - adultPrice
+ *               - adultQuantity
+ *               - tourDetailId
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *                 example: Thừa Văn An
+ *               email:
+ *                 type: string
+ *                 example: thuavanan628@gmail.com
+ *               phoneNumber:
+ *                 type: string
+ *                 example: 0868936041
+ *               address:
+ *                 type: string
+ *                 example: Quảng Đại, Sầm Sơn, Thanh Hóa
+ *               adultPrice:
+ *                 type: integer
+ *                 example: 1000000
+ *               adultQuantity:
+ *                 type: integer
+ *                 example: 2
+ *               childrenPrice:
+ *                 type: integer
+ *                 example: 800000
+ *               childrenQuantity:
+ *                 type: integer
+ *                 example: 1
+ *               childPrice:
+ *                 type: integer
+ *                 example: 600000
+ *               childQuantity:
+ *                 type: integer
+ *                 example: 1
+ *               babyPrice:
+ *                 type: integer
+ *                 example: 400000
+ *               babyQuantity:
+ *                 type: integer
+ *                 example: 1
+ *               singleRoomSupplementPrice:
+ *                 type: integer
+ *                 example: 500000
+ *               singleRoomSupplementQuantity:
+ *                 type: integer
+ *                 example: 1
+ *               note:
+ *                 type: string
+ *                 example: Không có ghi chú
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [cash, bank_transfer, ZaloPay, MoMo]
+ *                 example: cash
+ *               tourDetailId:
+ *                 type: integer
+ *                 example: 1
+ *               userId:
+ *                 type: integer
+ *                 example: 1
+ *     responses:
+ *       200:
+ *         description: Đặt tour thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Đặt hàng thành công!
+ *                 orderId:
+ *                   type: integer
+ *                   example: 1
+ *                 transactionId:
+ *                   type: integer
+ *                   example: 1
+ *       400:
+ *         description: Vui lòng gửi đủ dữ liệu
+ *       500:
+ *         description: Có lỗi xảy ra khi đặt tour
+ */
+
+
+// [POST] /api/orders/book-tour
 module.exports.bookTour = async (req, res) => {
   const {
     fullName,

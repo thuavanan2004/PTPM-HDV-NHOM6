@@ -1,7 +1,48 @@
 const User = require("../../models/users.model")
 const bcrypt = require("bcrypt");
 
-// [GET] /api/user/profile
+/**
+ * @swagger
+ * /user/profile:
+ *   get:
+ *     tags:
+ *       - User
+ *     summary: Lấy thông tin người dùng
+ *     description: Truy xuất thông tin người dùng dựa trên ID người dùng hiện tại.
+ *     operationId: getUserProfile
+ *     responses:
+ *       200:
+ *         description: Thông tin người dùng đã được lấy thành công.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     fullName:
+ *                       type: string
+ *                       example: Thừa Văn An
+ *                     email:
+ *                       type: string
+ *                       example: thuavanan628@gmail.com
+ *                     phoneNumber:
+ *                       type: string
+ *                       example: 0868936041
+ *                     address:
+ *                       type: string
+ *                       example: Quảng Đại, Sầm Sơn, Thanh Hóa
+ *       404:
+ *         description: Người dùng không tồn tại.
+ *       500:
+ *         description: Có lỗi xảy ra khi lấy thông tin người dùng.
+ */
+
+// [GET] /user/profile
 module.exports.profile = async (req, res) => {
   try {
     const userId = res.locals.userId;
@@ -34,7 +75,55 @@ module.exports.profile = async (req, res) => {
   }
 }
 
-// [PATCH] /api/user/change-password
+/**
+ * @swagger
+ * /user/change-password:
+ *   patch:
+ *     tags:
+ *       - User
+ *     summary: Thay đổi mật khẩu người dùng
+ *     description: Cho phép người dùng thay đổi mật khẩu của mình bằng cách cung cấp mật khẩu cũ và mật khẩu mới.
+ *     operationId: changeUserPassword
+ *     requestBody:
+ *       description: Thông tin thay đổi mật khẩu
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - oldPassword
+ *               - newPassword
+ *               - confirmNewPassword
+ *             properties:
+ *               oldPassword:
+ *                 type: string
+ *                 example: mật khẩu_cũ
+ *               newPassword:
+ *                 type: string
+ *                 example: mật khẩu_mới
+ *               confirmNewPassword:
+ *                 type: string
+ *                 example: mật khẩu_mới
+ *     responses:
+ *       200:
+ *         description: Đổi mật khẩu thành công.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: Đổi mật khẩu thành công!
+ *       400:
+ *         description: Thiếu thông tin cần thiết.
+ *       401:
+ *         description: Mật khẩu cũ không đúng hoặc xác nhận mật khẩu không khớp.
+ *       404:
+ *         description: Người dùng không tồn tại.
+ *       500:
+ *         description: Có lỗi xảy ra khi thay đổi mật khẩu.
+ */
+
+// [PATCH] /user/change-password
 module.exports.changePassword = async (req, res) => {
   try {
     const userId = res.locals.userId;
@@ -83,7 +172,49 @@ module.exports.changePassword = async (req, res) => {
   }
 }
 
-// [PATCH] /api/user/update
+/**
+ * @swagger
+ * /user/update:
+ *   patch:
+ *     tags:
+ *       - User
+ *     summary: Cập nhật thông tin người dùng
+ *     description: Cho phép người dùng cập nhật thông tin cá nhân như họ tên, số điện thoại và địa chỉ.
+ *     operationId: updateUser
+ *     requestBody:
+ *       description: Thông tin cần cập nhật
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *                 example: Thừa Văn An
+ *               phoneNumber:
+ *                 type: string
+ *                 example: 0868936041
+ *               address:
+ *                 type: string
+ *                 example: Quảng Đại, Sầm Sơn, Thanh Hóa
+ *     responses:
+ *       200:
+ *         description: Cập nhật thông tin thành công.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: Cập nhật thông tin thành công!
+ *       400:
+ *         description: Vui lòng cung cấp thông tin cần cập nhật.
+ *       404:
+ *         description: Người dùng không tồn tại.
+ *       500:
+ *         description: Có lỗi xảy ra khi cập nhật thông tin.
+ */
+
+// [PATCH] /user/update
 module.exports.update = async (req, res) => {
   const userId = res.locals.userId;
   const {
@@ -124,8 +255,30 @@ module.exports.update = async (req, res) => {
   }
 }
 
+/**
+ * @swagger
+ * /user/delete:
+ *   patch:
+ *     tags:
+ *       - User
+ *     summary: Xóa tài khoản người dùng
+ *     description: Đánh dấu tài khoản người dùng là đã xóa bằng cách cập nhật trường 'deleted' thành true.
+ *     operationId: deleteUser
+ *     responses:
+ *       200:
+ *         description: Xóa tài khoản thành công.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: Xóa tài khoản thành công!
+ *       404:
+ *         description: Người dùng không tồn tại.
+ *       500:
+ *         description: Có lỗi xảy ra khi xóa tài khoản.
+ */
 
-// [PATCH] /api/user/delete
+// [PATCH] /user/delete
 module.exports.delete = async (req, res) => {
   const userId = res.locals.userId;
 
