@@ -10,9 +10,9 @@ const swaggerUi = require("swagger-ui-express");
 const srapeData = require("./scrape-data/index");
 const cron = require('node-cron');
 
+mysql: //root:nwSxozPCwWXzZHnltrpZbretJXVpcGqz@junction.proxy.rlwy.net:27845/railway
 
-
-sequelize;
+  sequelize;
 
 const app = express();
 const port = process.env.PORT;
