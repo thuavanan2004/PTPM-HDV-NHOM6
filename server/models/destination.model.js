@@ -25,12 +25,29 @@ const Destination = sequelize.define('Destination', {
   information: {
     type: DataTypes.TEXT,
   },
+  status: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
   deleted: {
-    type: DataTypes.BOOLEAN
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  createdBy: {
+    type: DataTypes.INTEGER,
+  },
+  updatedBy: {
+    type: DataTypes.INTEGER,
+  },
+  deletedBy: {
+    type: DataTypes.INTEGER,
+  },
+  parentId: {
+    type: DataTypes.INTEGER,
   }
 }, {
   tableName: 'destination',
-  timestamps: false
+  timestamps: true
 });
 
 

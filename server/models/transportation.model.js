@@ -16,10 +16,27 @@ const Transportation = sequelize.define('Transportation', {
   },
   information: {
     type: DataTypes.TEXT,
+  },
+  status: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  deleted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  createdBy: {
+    type: DataTypes.INTEGER,
+  },
+  updatedBy: {
+    type: DataTypes.INTEGER,
+  },
+  deletedBy: {
+    type: DataTypes.INTEGER,
   }
 }, {
   tableName: 'transportation',
-  timestamps: false
+  timestamps: true
 });
 
 
