@@ -13,5 +13,7 @@ router.patch("/edit", checkPermission('UPDATE_TOUR'), controllers.edit);
 
 router.delete("/delete", checkPermission('DELETE_TOUR'), controllers.delete);
 
+router.get("/:tourDetailId/getTour", checkPermission('READ_TOUR'), controllers.getTour);
+
 
 module.exports = router;

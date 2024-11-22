@@ -277,7 +277,6 @@ module.exports.create = async (req, res) => {
     transportationId,
     destinationId,
     categoryId,
-    infoImage,
     images,
     tour_detail
   } = req.body;
@@ -550,27 +549,63 @@ module.exports.edit = async (req, res) => {
     // Update information
     if (information) {
       const informationParse = JSON.parse(information);
+
+      // Tìm bản ghi hiện tại
       const record = await Information.findOne({
         where: {
           tourId
         },
-        transaction
+        transaction,
       });
 
-      await Information.update({
-        attractions: informationParse.attractions || record.attractions,
-        cuisine: informationParse.cuisine || record.cuisine,
-        suitableObject: informationParse.suitableObject || record.suitableObject,
-        idealTime: informationParse.idealTime || record.idealTime,
-        vehicle: informationParse.vehicle || record.vehicle,
-        promotion: informationParse.promotion || record.promotion
-      }, {
+      // Tạo một object để lưu các giá trị cập nhật
+      const updatedFields = {};
+
+      if (informationParse.attractions && informationParse.attractions.trim() !== "") {
+        updatedFields.attractions = informationParse.attractions;
+      } else if (record) {
+        updatedFields.attractions = record.attractions;
+      }
+
+      if (informationParse.cuisine && informationParse.cuisine.trim() !== "") {
+        updatedFields.cuisine = informationParse.cuisine;
+      } else if (record) {
+        updatedFields.cuisine = record.cuisine;
+      }
+
+      if (informationParse.suitableObject && informationParse.suitableObject.trim() !== "") {
+        updatedFields.suitableObject = informationParse.suitableObject;
+      } else if (record) {
+        updatedFields.suitableObject = record.suitableObject;
+      }
+
+      if (informationParse.idealTime && informationParse.idealTime.trim() !== "") {
+        updatedFields.idealTime = informationParse.idealTime;
+      } else if (record) {
+        updatedFields.idealTime = record.idealTime;
+      }
+
+      if (informationParse.vehicle && informationParse.vehicle.trim() !== "") {
+        updatedFields.vehicle = informationParse.vehicle;
+      } else if (record) {
+        updatedFields.vehicle = record.vehicle;
+      }
+
+      if (informationParse.promotion && informationParse.promotion.trim() !== "") {
+        updatedFields.promotion = informationParse.promotion;
+      } else if (record) {
+        updatedFields.promotion = record.promotion;
+      }
+
+      // Cập nhật bản ghi với các giá trị đã được xử lý
+      await Information.update(updatedFields, {
         where: {
           tourId
         },
-        transaction
+        transaction,
       });
     }
+
 
     // Update schedule
     if (schedule && JSON.parse(schedule).length > 0) {

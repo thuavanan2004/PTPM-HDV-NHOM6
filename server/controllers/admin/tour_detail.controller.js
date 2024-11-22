@@ -1,3 +1,4 @@
+const Image = require("../../models/image.model");
 const TourDetail = require("../../models/tour-detail.model");
 const Tour = require("../../models/tour.model");
 
@@ -463,5 +464,25 @@ module.exports.delete = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json("Lỗi khi xoá một tour detail")
+  }
+}
+
+module.exports.getTour = async (req, res) => {
+  const tourDetailId = req.params.tourDetailId;
+  try {
+    const tourDetail = await TourDetail.findByPk(tourDetailId);
+    const tour = await Tour.findByPk(tourDetail.tourId);
+    const image = await Image.findOne({
+      where: {
+        tourId: tour.id
+      }
+    })
+    res.status(200).json({
+      tour,
+      image
+    })
+  } catch (error) {
+    console.log(error);
+    res.status(500).json("Lỗi lấy tour")
   }
 }
