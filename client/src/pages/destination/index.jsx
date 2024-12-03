@@ -167,8 +167,8 @@ function Destination() {
       key: "action",
       render: (_, destination) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(destination)}>Edit</a>
-          <a onClick={() => handleDelete(destination)}>Delete</a>
+          <a onClick={() => handleEdit(destination)}>Sửa</a>
+          <a onClick={() => handleDelete(destination)}>Xóa</a>
         </Space>
       ),
     },
@@ -278,8 +278,8 @@ function Destination() {
           loading={loading}
           rowKey="id"
           className="dashboard-table"
-          style={{ marginTop: '30px' }}
-          pagination={{ pageSize: 5 }}
+          style={{ marginTop: "30px" }}
+          pagination={{ pageSize: 8 }}
         />
         {/* Edit Modal */}
         <Modal

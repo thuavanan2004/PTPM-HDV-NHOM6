@@ -78,8 +78,8 @@ function Role() {
       key: "action",
       render: (_, role) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(role)}>Edit</a>
-          <a onClick={() => handleDelete(role)}>Delete</a>
+          <a onClick={() => handleEdit(role)}>Sửa</a>
+          <a onClick={() => handleDelete(role)}>Xóa</a>
         </Space>
       ),
     },
@@ -105,11 +105,11 @@ function Role() {
     try {
       await deleteMethod(`roles/delete/${role.id}`);
       setLoading(false);
-      message.success("Cập nhật thông tin thành công");
+      message.success("Xóa quyền thành công");
       fetchRoles();
     } catch (error) {
       setLoading(false);
-      message.error("Cập nhật thông tin thành công");
+      message.error("Xóa quyền không thành công");
     }
   };
 

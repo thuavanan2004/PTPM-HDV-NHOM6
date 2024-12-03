@@ -16,8 +16,20 @@ const swaggerDefinition = {
     },
   },
   servers: [{
-    url: "https://tourism-be-1ipl.onrender.com/api",
+    url: "http://localhost:5000/api/client",
     description: "Local server",
+  }, ],
+  components: {
+    securitySchemes: {
+      BearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+    },
+  },
+  security: [{
+    BearerAuth: [],
   }, ],
 };
 

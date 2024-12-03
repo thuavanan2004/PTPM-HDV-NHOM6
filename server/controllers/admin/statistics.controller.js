@@ -132,12 +132,12 @@ module.exports.tours = async (req, res) => {
     GROUP BY tours.id
     HAVING orderCount > 0
     ORDER BY orderCount DESC
+    LIMIT 3
     `;
 
     const mostBookedTour = await sequelize.query(mostBookedTourQuery, {
       type: sequelize.QueryTypes.SELECT
     });
-
 
 
     // Tour được thêm vào danh sách yêu thích nhiều nhất
@@ -147,7 +147,8 @@ module.exports.tours = async (req, res) => {
     LEFT JOIN favorites ON favorites.tourId = tours.id
     GROUP BY tours.id
     HAVING favoriteCount > 0
-    ORDER BY favoriteCount DESC;
+    ORDER BY favoriteCount DESC
+    LIMIT 3;
     `;
 
     const mostFavoritedTour = await sequelize.query(mostFavoritedTourQuery, {

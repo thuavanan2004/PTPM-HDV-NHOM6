@@ -60,6 +60,7 @@ function Tour() {
 
   const fetchDataTour = async () => {
     try {
+      setLoading(true);
       const [
         response,
         categoriesData,
@@ -373,7 +374,6 @@ function Tour() {
           placeholder="Trạng thái"
           onChange={(value) => setFilters({ ...filters, status: value })}
         >
-          <Option value="">Tất cả</Option>
           <Option value="1">Hoạt động</Option>
           <Option value="0">Không hoạt động</Option>
         </Select>
@@ -384,7 +384,6 @@ function Tour() {
           placeholder="Nổi bật"
           onChange={(value) => setFilters({ ...filters, isFeatured: value })}
         >
-          <Option value="">Tất cả</Option>
           <Option value="1">Nổi bật</Option>
           <Option value="0">Không nổi bật</Option>
         </Select>
@@ -407,7 +406,7 @@ function Tour() {
         dataSource={tour}
         loading={loading}
         className="dashboard-table"
-        pagination={{ pageSize: 4 }}
+        pagination={{ pageSize: 8 }}
       />
     </div>
   );

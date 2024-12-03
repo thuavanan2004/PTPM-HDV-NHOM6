@@ -16,7 +16,7 @@ const swaggerDefinition = {
     },
   },
   servers: [{
-    url: "https://tourism-be-1ipl.onrender.com/api/admin",
+    url: "http://localhost:5000/api/admin",
     description: "Local server",
   }],
   components: {

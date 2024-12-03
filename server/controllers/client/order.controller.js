@@ -196,12 +196,13 @@ module.exports.bookTour = async (req, res) => {
     });
 
     const query = `
-    SELECT tours.title, tours.code, tours.price, tours.image, tour_detail.*, destination.title as destination, departure.title as departure
+    SELECT tours.title, tours.code, images.source, tour_detail.*, destination.title as destination, departure.title as departure
       FROM favorites
       JOIN tours ON tours.id = favorites.tourId
       JOIN tour_detail ON tour_detail.tourId = tours.id
       JOIN destination ON destination.id = tours.destinationId
       JOIN departure ON departure.id = tours.departureId
+      JOIN images ON images.tourId = tours.id
       WHERE 
       tour_detail.id = :tourDetailId
     `;

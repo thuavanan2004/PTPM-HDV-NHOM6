@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import './style.scss'
+import "./style.scss";
 import { Table, Space, Switch, message, Button } from "antd";
 import { deleteMethod, get, patch } from "../../utils/axios-http/axios-http";
 import EditAccount from "./edit";
@@ -88,8 +88,8 @@ function Account() {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(record)}>Edit</a>
-          <a onClick={() => handleDelete(record)}>Delete</a>
+          <a onClick={() => handleEdit(record)}>Sửa</a>
+          <a onClick={() => handleDelete(record)}>Xóa</a>
         </Space>
       ),
     },

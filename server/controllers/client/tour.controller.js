@@ -12,6 +12,7 @@ const Destination = require("../../models/destination.model");
 const Favorite = require("../../models/favorite.model");
 const unidecode = require("unidecode");
 const transformeDataHelper = require("../../helpers/transformeData");
+const Transportation = require("../../models/transportation.model");
 
 // [GET] /tours/
 module.exports.index = async (req, res) => {
@@ -140,8 +141,11 @@ module.exports.detail = async (req, res) => {
         exclude: ['deletedAt', 'createdAt', 'updatedAt', 'deleted', 'deletedBy', 'updatedBy']
       }
     });
+    if (!tour) {
+      return res.status(400).json("Tour không tồn tại!")
+    }
 
-    const [tourDetail, schedules, images, information, departure, destination] = await Promise.all([
+    const [tourDetail, schedules, images, information, departure, destination, transportation] = await Promise.all([
       TourDetail.findAll({
         where: {
           tourId: tour.id
@@ -181,6 +185,12 @@ module.exports.detail = async (req, res) => {
           id: tour.destinationId
         },
         attributes: ['title']
+      }),
+      Transportation.findOne({
+        where: {
+          id: tour.transportationId
+        },
+        attributes: ['title']
       })
     ]);
 
@@ -194,6 +204,7 @@ module.exports.detail = async (req, res) => {
     tourData.information = information;
     tourData.departure = departure.title;
     tourData.destination = destination.title;
+    tourData.transportation = transportation.title;
 
     if (!tour) {
       return res.status(404).json({
@@ -327,33 +338,46 @@ module.exports.getTour = async (req, res) => {
     budgetId,
     departureFrom,
     fromDate,
-    transTypeId
+    transTypeId,
+    text
   } = req.query;
 
   try {
-    var priceQuery = `tours.price >= 0`;
+    let replacements = {
+      slug: slug
+    };
+    var priceQuery = `tour_detail.adultPrice >= 0`;
     if (budgetId) {
       switch (budgetId) {
         case 1:
-          priceQuery = `tours.price < 5000000`;
+          priceQuery = `tour_detail.adultPrice < 5000000`;
           break;
         case 2:
-          priceQuery = `  tours.price >= 5000000
-                      AND tours.price < 10000000`;
+          priceQuery = `  tour_detail.adultPrice >= 5000000
+                      AND tour_detail.adultPrice < 10000000`;
           break;
         case 3:
-          priceQuery = `tours.price >= 10000000
-                      AND tours.price < 20000000`;
+          priceQuery = `tour_detail.adultPrice >= 10000000
+                      AND tour_detail.adultPrice < 20000000`;
           break;
         case 4:
-          priceQuery = `tours.price >= 20000000`;
+          priceQuery = `tour_detail.adultPrice >= 20000000`;
           break;
         default:
-          priceQuery = `tours.price >= 0`
+          priceQuery = `tour_detail.adultPrice >= 0`
           break;
       }
     }
     // console.log(priceQuery)
+
+    var searchQuery = '';
+    if (text) {
+      const textUnidecode = unidecode(text);
+      const textSlug = textUnidecode.replace(/\s+/g, "-");
+      const textRegex = `%${textSlug}%`;
+      searchQuery = "AND tours.slug LIKE :titleSlug";
+      replacements.titleSlug = textRegex;
+    }
 
     var departureQuery = '';
     if (departureFrom) {
@@ -385,46 +409,72 @@ module.exports.getTour = async (req, res) => {
       var categoryQuery = `categories.slug = :slug`;
     } else {
       // Nếu không phải category, kiểm tra xem có phải là departure không
-      const destinationCheck = await sequelize.query(`SELECT * FROM destination WHERE slug = :slug`, {
+      const destinationTreeQuery = `
+        WITH RECURSIVE DestinationTree AS (
+          SELECT id, parentId, title, slug
+          FROM destination
+          WHERE slug = :slug 
+          UNION ALL
+          SELECT d.id, d.parentId, d.title, d.slug
+          FROM destination d
+          INNER JOIN DestinationTree dt ON d.parentId = dt.id
+        )
+        SELECT id
+        FROM DestinationTree
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM destination
+            WHERE parentId = DestinationTree.id
+        )
+      `;
+
+      const destinationIds = await sequelize.query(destinationTreeQuery, {
         replacements: {
           slug
         },
         type: QueryTypes.SELECT
       });
-      if (destinationCheck.length > 0) {
-        var destinationQuery = `destination.slug = :slug AND destination.deleted = false`;
-      }
+
+      // Tạo danh sách ID của các điểm đến cuối cùng
+      const destinationIdList = destinationIds.map(row => row.id).join(',');
+
+      // Chèn điều kiện cho destination
+      var destinationQuery = `
+        destination.id IN (${destinationIdList}) AND destination.deleted = false
+      `;
+
     }
 
     const dayFormat = new Date();
     const formattedDate = dayFormat.toISOString().slice(0, 19).replace('T', ' ');
 
     const query = `
-    SELECT tours.title, tours.code, tours.slug, tours.price, tours.image, tour_detail.dayStart, tour_detail.dayReturn, 
-    destination.title as destination, transportation.title as transportation
+    SELECT tours.id, tours.title, tours.code, tours.slug, tour_detail.adultPrice as price, images.source as image, tour_detail.dayStart, tour_detail.dayReturn, 
+    destination.title as destination, departure.title as departure, transportation.title as transportation
     FROM tours
     JOIN tours_categories ON tours.id = tours_categories.tourId
     JOIN categories ON tours_categories.categoryId = categories.id
     JOIN destination ON tours.destinationId = destination.id
+    JOIN departure ON tours.departureId = departure.id
     JOIN transportation ON transportation.id = tours.transportationId
     JOIN tour_detail ON tour_detail.tourId = tours.id
+    JOIN images ON images.tourId = tours.id
     WHERE
-      ${categoryQuery ? categoryQuery : ""} ${destinationQuery}
-      AND categories.deleted = false
+      ${categoryQuery ? categoryQuery : destinationQuery}
+      AND categories.deleted = 0
       AND categories.status = 1
-      AND tours.deleted = false
+      AND tours.deleted = 0
       AND tours.status = 1
       AND DATEDIFF(tour_detail.dayStart, '${formattedDate}') >= 0
       AND ${priceQuery}
       ${departureQuery}
       ${transportationQuery} 
       ${dayQuery}
+      ${searchQuery}
     `;
 
     const tours = await sequelize.query(query, {
-      replacements: {
-        slug
-      },
+      replacements: replacements,
       type: QueryTypes.SELECT
     });
 
@@ -669,14 +719,14 @@ module.exports.flashSale = async (req, res) => {
 
     var query = `
       SELECT  
-        tours.id, tours.code, tours.title, tours.price, tours.slug,
+        tours.id, tours.code, tours.title, tour_detail.adultPrice as price, tours.slug, tour_detail.discount,
         tour_detail.dayStart, tour_detail.dayReturn, tour_detail.stock, destination.title as destination
       FROM tours
       JOIN tour_detail ON tours.id = tour_detail.tourId
       JOIN destination ON destination.id = tours.destinationId
       WHERE 
-        tours.deleted = FALSE
-        AND status = TRUE
+        tours.deleted = 0
+        AND tours.status = 1
         AND DATEDIFF(tour_detail.dayStart, '${formattedDate}') <= 5
         AND DATEDIFF(tour_detail.dayStart, '${formattedDate}') >= 0
       GROUP BY tours.id
@@ -946,12 +996,14 @@ module.exports.getTourFavorites = async (req, res) => {
 
   try {
     const query = `
-      SELECT tours.title, tours.code, tours.slug, tours.price, tours.image, tour_detail.dayStart, tour_detail.dayReturn, destination.title as destination, transportation.title as transportation
+      SELECT tours.id, tours.title, tours.code, tours.slug, tour_detail.adultPrice as price, images.source as image, tour_detail.dayStart, tour_detail.dayReturn, destination.title as destination, transportation.title as transportation, departure.title as departure
       FROM favorites
       JOIN tours ON tours.id = favorites.tourId
+      JOIN images ON images.tourId = tours.id
       JOIN tour_detail ON tour_detail.tourId = tours.id
       JOIN destination ON destination.id = tours.destinationId
       JOIN transportation ON transportation.id = tours.transportationId
+      JOIN departure ON departure.id = tours.departureId
       WHERE 
         favorites.userId = :userId
         AND tour_detail.dayStart >= CURDATE()
@@ -963,10 +1015,11 @@ module.exports.getTourFavorites = async (req, res) => {
         userId
       }
     });
+    console.log(tours);
 
     if (tours.length === 0) {
-      return res.status(404).json({
-        message: 'Không tìm thấy tour yêu thích nào.'
+      return res.status(200).json({
+        message: 'Danh sách tour yêu thích rỗng.'
       });
     }
 
@@ -977,183 +1030,6 @@ module.exports.getTourFavorites = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       message: 'Có lỗi xảy ra khi lấy danh sách tour yêu thích.'
-    });
-  }
-}
-
-/**
- * @swagger
- * /tours/search:
- *   get:
- *     tags:
- *       - Tours
- *     summary: Tìm kiếm tour
- *     description: Tìm kiếm các tour dựa trên tiêu đề, ngày bắt đầu và ngân sách.
- *     operationId: searchTours
- *     parameters:
- *       - name: title
- *         in: query
- *         description: Tiêu đề của tour để tìm kiếm.
- *         required: false
- *         schema:
- *           type: string
- *           example: "Tour Tết"
- *       - name: fromDate
- *         in: query
- *         description: Ngày bắt đầu để tìm kiếm.
- *         required: false
- *         schema:
- *           type: string
- *           format: date
- *           example: "2024-01-25"
- *       - name: budgetId
- *         in: query
- *         description: ID của ngân sách để tìm kiếm.
- *         required: false
- *         schema:
- *           type: integer
- *           example: 2
- *     responses:
- *       200:
- *         description: Tìm kiếm tour thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   title:
- *                     type: string
- *                     example: "Tour Tết"
- *                   code:
- *                     type: string
- *                     example: "TET2024"
- *                   slug:
- *                     type: string
- *                     example: "tour-tet"
- *                   price:
- *                     type: number
- *                     example: 5000000
- *                   image:
- *                     type: string
- *                     example: "http://example.com/image.jpg"
- *                   dayStart:
- *                     type: string
- *                     format: date
- *                     example: "2024-01-25"
- *                   dayReturn:
- *                     type: string
- *                     format: date
- *                     example: "2024-01-30"
- *                   destination:
- *                     type: string
- *                     example: "Hà Nội"
- *                   transportation:
- *                     type: string
- *                     example: "Máy bay"
- *       404:
- *         description: Không tìm thấy tour nào
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Không tìm thấy tour nào."
- *       500:
- *         description: Có lỗi xảy ra khi tìm kiếm tour
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Có lỗi xảy ra khi tìm kiếm tour."
- */
-
-// [GET] /tours/search
-module.exports.search = async (req, res) => {
-  const {
-    title,
-    fromDate,
-    budgetId
-  } = req.query;
-
-  let query = `
-    SELECT tours.title, tours.code, tours.slug, tours.price, tours.image, tour_detail.dayStart, tour_detail.dayReturn, 
-    destination.title as destination, transportation.title as transportation
-    FROM tours 
-    JOIN tour_detail ON tour_detail.tourId = tours.id
-    JOIN destination ON destination.id = tours.destinationId
-    JOIN transportation ON transportation.id = tours.transportationId
-    WHERE 
-      tour_detail.dayStart >= CURDATE()
-      AND tours.deleted = false
-      AND tours.status = 1
-  `;
-
-  const replacements = {};
-
-  // Tìm kiếm theo tiêu đề
-  if (title) {
-    const titleUnidecode = unidecode(title);
-    const titleSlug = titleUnidecode.replace(/\s+/g, "-");
-    const titleRegex = `%${titleSlug}%`;
-    query += " AND tours.slug LIKE :titleSlug";
-    replacements.titleSlug = titleRegex;
-  }
-
-  // Tìm kiếm theo ngày bắt đầu
-  if (fromDate) {
-    query += " AND tour_detail.dayStart >= :fromDate";
-    replacements.fromDate = fromDate;
-  }
-
-  // Tìm kiếm theo ngân sách
-  if (budgetId) {
-    const key = parseInt(budgetId);
-    switch (key) {
-      case 1:
-        query += ` AND tours.price < 5000000`;
-        break;
-      case 2:
-        query += ` AND tours.price >= 5000000 AND tours.price < 10000000`;
-        break;
-      case 3:
-        query += ` AND tours.price >= 10000000 AND tours.price < 20000000`;
-        break;
-      case 4:
-        query += ` AND tours.price >= 20000000`;
-        break;
-      default:
-        query += ` AND tours.price >= 0`;
-        break;
-    }
-  }
-
-  try {
-    // Gọi truy vấn cơ sở dữ liệu và chờ kết quả
-    const tours = await sequelize.query(query, {
-      type: QueryTypes.SELECT,
-      replacements
-    });
-
-    const transformedData = transformeDataHelper.transformeData(tours);
-
-    if (transformedData.length === 0) {
-      return res.status(404).json({
-        message: 'Không tìm thấy tour nào.'
-      });
-    }
-
-    res.status(200).json(transformedData);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: 'Có lỗi xảy ra khi tìm kiếm tour.'
     });
   }
 }

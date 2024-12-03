@@ -10,12 +10,12 @@ module.exports.transformeData = (tours) => {
       });
     } else {
       transformedData.push({
+        id: item.id,
         title: item.title,
         code: item.code,
-        status: item.status,
-        isFeatured: item.isFeatured,
-        price: item.adultPrice,
-        image: item.source,
+        slug: item.slug,
+        price: item.price,
+        image: item.image,
         departure: item.departure,
         destination: item.destination,
         transportation: item.transportation,

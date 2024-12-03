@@ -25,88 +25,94 @@ const scrapeController = async (browserInstance) => {
     // console.log('Dữ liệu Category đã được nạp thành công vào cơ sở dữ liệu!');
 
 
-    const categories = await sequelize.query('SELECT id, url FROM Categories', {
-      type: QueryTypes.SELECT
-    });
-    await Promise.all(categories.map(async (category) => {
-      const categoryId = category.id;
-      const url = category.url;
-      let transaction;
+    // const categories = await sequelize.query('SELECT id, url FROM Categories', {
+    //   type: QueryTypes.SELECT
+    // });
+    const url = "https://travel.com.vn/du-lich-cao-cap.aspx";
+    let dataTours = await scrapers.scrapeTour(browser, url);
+    console.log(dataTours);
 
-      try {
-        transaction = await sequelize.transaction();
-        let dataTours = await scrapers.scrapeTour(browser, url);
+    // await Promise.all(categories.map(async (category) => {
+    //   // const categoryId = category.id;
+    //   const url = "https://travel.com.vn/du-lich-cao-cap.aspx";
+    //   let transaction;
 
-        if (dataTours && dataTours.length > 0) {
+    //   try {
+    //     transaction = await sequelize.transaction();
+    //     let dataTours = await scrapers.scrapeTour(browser, url);
+    //     console.log(dataTours);
 
-          const newTours = await Promise.all(dataTours.map(async (tour) => {
-            // Kiểm tra hoặc thêm transportation nếu chưa tồn tại
-            let [recordOfTransportation] = await Transportation.findOrCreate({
-              where: {
-                title: tour.transportation
-              },
-              defaults: {
-                title: tour.transportation
-              },
-              transaction
-            });
 
-            // Kiểm tra hoặc thêm departure nếu chưa tồn tại
-            let [recordOfDeparture] = await Departure.findOrCreate({
-              where: {
-                title: tour.departure
-              },
-              defaults: {
-                title: tour.departure
-              },
-              transaction
-            });
+    //     if (dataTours && dataTours.length > 0) {
 
-            return {
-              title: tour.title,
-              code: tour.code,
-              image: tour.image,
-              price: tour.price,
-              timeStart: tour.timeStart,
-              dayStay: tour.dayStay,
-              slug: slugify(tour.title, {
-                lower: true
-              }),
-              url: tour.url,
-              departureId: recordOfDeparture.id,
-              transportationId: recordOfTransportation.id
-            };
-          }));
+    //       const newTours = await Promise.all(dataTours.map(async (tour) => {
+    //         // Kiểm tra hoặc thêm transportation nếu chưa tồn tại
+    //         let [recordOfTransportation] = await Transportation.findOrCreate({
+    //           where: {
+    //             title: tour.transportation
+    //           },
+    //           defaults: {
+    //             title: tour.transportation
+    //           },
+    //           transaction
+    //         });
 
-          const createdTours = await Tour.bulkCreate(newTours, {
-            transaction,
-            ignoreDuplicates: true
-          });
+    //         // Kiểm tra hoặc thêm departure nếu chưa tồn tại
+    //         let [recordOfDeparture] = await Departure.findOrCreate({
+    //           where: {
+    //             title: tour.departure
+    //           },
+    //           defaults: {
+    //             title: tour.departure
+    //           },
+    //           transaction
+    //         });
 
-          const tourCategories = createdTours.map(tour => {
-            if (tour.id != null) {
-              return {
-                tour_id: tour.id,
-                category_id: categoryId
-              }
-            }
-          }).filter(item => item !== undefined);
+    //         return {
+    //           title: tour.title,
+    //           code: tour.code,
+    //           image: tour.image,
+    //           price: tour.price,
+    //           timeStart: tour.timeStart,
+    //           dayStay: tour.dayStay,
+    //           slug: slugify(tour.title, {
+    //             lower: true
+    //           }),
+    //           url: tour.url,
+    //           departureId: recordOfDeparture.id,
+    //           transportationId: recordOfTransportation.id
+    //         };
+    //       }));
 
-          await TourCategory.bulkCreate(tourCategories, {
-            transaction
-          });
+    //       const createdTours = await Tour.bulkCreate(newTours, {
+    //         transaction,
+    //         ignoreDuplicates: true
+    //       });
 
-        } else {
-          console.log(`Không có tour nào cho danh mục ${categoryId}`);
-        }
+    //       const tourCategories = createdTours.map(tour => {
+    //         if (tour.id != null) {
+    //           return {
+    //             tour_id: tour.id,
+    //             category_id: categoryId
+    //           }
+    //         }
+    //       }).filter(item => item !== undefined);
 
-        await transaction.commit();
-      } catch (error) {
+    //       await TourCategory.bulkCreate(tourCategories, {
+    //         transaction
+    //       });
 
-        if (transaction) await transaction.rollback();
-        console.log(`Lỗi khi xử lý category ${categoryId}: ${error}`);
-      }
-    }));
+    //     } else {
+    //       console.log(`Không có tour nào cho danh mục ${categoryId}`);
+    //     }
+
+    //     await transaction.commit();
+    //   } catch (error) {
+
+    //     if (transaction) await transaction.rollback();
+    //     console.log(`Lỗi khi xử lý category ${categoryId}: ${error}`);
+    //   }
+    // }));
 
 
     // Lấy tour detail

@@ -85,7 +85,7 @@ function Sidebar() {
       label: "Account",
       icon: <img src={Role} alt="" className="icon" />,
       to: "/accounts",
-      permission: "READ_ACCOUNT",
+      permission: "READ_ADMIN",
     },
   ];
 

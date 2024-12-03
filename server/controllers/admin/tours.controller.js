@@ -303,6 +303,7 @@ module.exports.create = async (req, res) => {
   }
 
   try {
+    const adminId = res.locals.adminId;
     const transaction = await sequelize.transaction();
     const code = generateCodeHelper.generateTourCode();
     const slug = slugify(title, {
@@ -316,7 +317,8 @@ module.exports.create = async (req, res) => {
       isFeatured: isFeatured || 0,
       departureId: departureId,
       destinationId: destinationId,
-      transportationId: transportationId
+      transportationId: transportationId,
+      createBy: adminId
     }, {
       transaction: transaction
     });

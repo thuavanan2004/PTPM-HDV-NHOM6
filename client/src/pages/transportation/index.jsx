@@ -95,8 +95,8 @@ function Transportation() {
       key: "action",
       render: (_, transportation) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(transportation)}>Edit</a>
-          <a onClick={() => handleDelete(transportation)}>Delete</a>
+          <a onClick={() => handleEdit(transportation)}>Sửa</a>
+          <a onClick={() => handleDelete(transportation)}>Xóa</a>
         </Space>
       ),
     },

@@ -92,7 +92,7 @@ function App() {
             },
             {
               path: "/accounts",
-              element: checkPermission("READ_ACCOUNT") ? (
+              element: checkPermission("READ_ADMIN") ? (
                 <Account />
               ) : (
                 <Dashboard />
