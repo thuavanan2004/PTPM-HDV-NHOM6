@@ -9,6 +9,7 @@ const initialState = {
     id: null,
     fullName: '',
     avatar: '',
+    roleId: '',
     roleName: ''
   },
   permissions: [],
@@ -23,6 +24,7 @@ const adminSlice = createSlice({
       state.admin.fullName = action.payload.fullName;
       state.admin.avatar = action.payload.avatar;
       state.admin.roleName = action.payload.roleName;
+      state.admin.roleId = action.payload.roleId;
     },
     setPermissions: (state, action) => {
       state.permissions = action.payload;

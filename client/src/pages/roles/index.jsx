@@ -1,37 +1,76 @@
 import React, { useEffect, useState } from "react";
 import "./style.scss";
-import { Space, Table, Modal, message, Button } from "antd";
-import { get } from "../../utils/axios-http/axios-http";
-import { patch } from "../../utils/axios-http/axios-http";
-import { post } from "../../utils/axios-http/axios-http";
-import { deleteMethod } from "../../utils/axios-http/axios-http";
+import { Space, Table, Modal, message, Button, Popconfirm, Input } from "antd";
+import {
+  get,
+  patch,
+  post,
+  deleteMethod,
+} from "../../utils/axios-http/axios-http";
+import { useSelector } from "react-redux";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 function Role() {
   const [listRoles, setListRoles] = useState({ roles: [] });
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false); // Flag to check if it's edit or create
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [roleId, setRoleId] = useState("");
 
-  const showModal = () => {
+  // Lấy quyền từ Redux Store
+  const permissions = useSelector((state) => state.admin.permissions);
+
+  // Kiểm tra quyền
+  const canCreate = permissions.includes("CREATE_ROLES");
+  const canUpdate = permissions.includes("UPDATE_ROLES");
+  const canDelete = permissions.includes("DELETE_ROLES");
+
+  const showModal = (role = null) => {
+    if (role) {
+      // Set the role to edit
+      setIsEditMode(true);
+      setRoleId(role.id);
+      setName(role.name);
+      setDescription(role.description);
+    } else {
+      // Prepare for creating a new role
+      setIsEditMode(false);
+      setName("");
+      setDescription("");
+    }
     setIsModalOpen(true);
   };
+
   const handleOk = async () => {
     setLoading(true);
     try {
-      await patch(`roles/update/${roleId}`, {
-        name,
-        description,
-      });
-      message.success("Cập nhật thông tin thành công");
-      fetchRoles();
+      if (isEditMode) {
+        // Update the existing role
+        await patch(`roles/update/${roleId}`, {
+          name,
+          description,
+        });
+        message.success("Cập nhật thông tin thành công");
+      } else {
+        // Create a new role
+        await post("roles/create", {
+          name,
+          description,
+        });
+        message.success("Thêm mới quyền thành công");
+      }
+      fetchRoles(); // Reload roles after success
     } catch (error) {
-      message.error("Cập nhật thông tin thành công");
+      message.error(
+        isEditMode ? "Cập nhật thông tin thất bại" : "Thêm mới quyền thất bại"
+      );
     }
-    setIsModalOpen(false);
     setLoading(false);
+    setIsModalOpen(false);
   };
+
   const handleCancel = () => {
     setIsModalOpen(false);
   };
@@ -78,12 +117,27 @@ function Role() {
       key: "action",
       render: (_, role) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(role)}>Sửa</a>
-          <a onClick={() => handleDelete(role)}>Xóa</a>
+          {canUpdate && (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => showModal(role)} // Open modal in edit mode
+            />
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="Bạn có chắc chắn xóa quyền này chứ?"
+              okText="Có"
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(role)}
+            >
+              <Button icon={<DeleteOutlined />} danger />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
   ];
+
   const data = listRoles.roles.map((role) => {
     return {
       id: role.id,
@@ -94,108 +148,51 @@ function Role() {
     };
   });
 
-  const handleEdit = (role) => {
-    setName(role.name);
-    setDescription(role.description);
-    setRoleId(role.id);
-    showModal();
-  };
   const handleDelete = async (role) => {
     setLoading(true);
     try {
       await deleteMethod(`roles/delete/${role.id}`);
-      setLoading(false);
       message.success("Xóa quyền thành công");
       fetchRoles();
     } catch (error) {
-      setLoading(false);
       message.error("Xóa quyền không thành công");
     }
-  };
-
-  const handleClick = () => {
-    setIsModalOpen(true);
-  };
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      await post("roles/create", {
-        name: name,
-        description: description,
-      });
-      message.success("Thêm mới quyền thành công");
-      fetchRoles();
-    } catch (error) {
-      message.error("Thêm mới quyền thất bại");
-    }
     setLoading(false);
-    setIsModalOpen(false);
   };
 
   return (
     <>
-      <div className="roles-container">
-        <Button type="primary" onClick={handleClick}>
-          {" "}
-          Thêm mới{" "}
-        </Button>
+      <div className="layout-container">
+        {canCreate && (
+          <Button type="primary" onClick={() => showModal()}>
+            Thêm mới
+          </Button>
+        )}
         <Table
           columns={columns}
           dataSource={data}
           loading={loading}
           rowKey="id"
-          className="dashboard-table"
+          className="table-container"
         />
         <Modal
-          title="Cập nhật thông tin"
+          title={isEditMode ? "Cập nhật quyền" : "Thêm mới quyền"}
           open={isModalOpen}
           onOk={handleOk}
           onCancel={handleCancel}
-          loading={loading}
+          confirmLoading={loading}
         >
           <form className="formUpdateRole">
             <div className="role-item">
               <span>Tên</span>
-              <input
-                value={name}
-                type="name"
-                onChange={(e) => setName(e.target.value)}
-              />
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="role-item">
               <span>Mô tả</span>
-              <input
+              <Input.TextArea
                 value={description}
-                type="description"
                 onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </form>
-        </Modal>
-        <Modal
-          title="Thêm mới quyền"
-          open={isModalOpen}
-          onOk={handleSubmit}
-          onCancel={handleCancel}
-          loading={loading}
-        >
-          <form className="formUpdateRole">
-            <div className="role-item" style={{ marginBottom: "20px" }}>
-              <span>Tên: </span>
-              <input
-                style={{ marginLeft: "35px", width: "370px", height: "25px" }}
-                value={name}
-                type="name"
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="role-item">
-              <span>Mô tả: </span>
-              <input
-                style={{ marginLeft: "20px", width: "370px", height: "25px" }}
-                value={description}
-                type="description"
-                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
               />
             </div>
           </form>

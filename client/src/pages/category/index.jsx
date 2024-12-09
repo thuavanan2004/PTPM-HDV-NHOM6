@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from "react";
+import { get, post, patch } from "../../utils/axios-http/axios-http";
 import {
-  get,
-  post,
-  patch,
-  deleteMethod,
-} from "../../utils/axios-http/axios-http";
-import { Space, Table, Modal, message, Button, Form, Input, Tag } from "antd";
+  Space,
+  Table,
+  Modal,
+  message,
+  Button,
+  Form,
+  Input,
+  Tag,
+  Popconfirm,
+} from "antd";
+import { useSelector } from "react-redux";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 function Category() {
   const [categories, setCategories] = useState([]);
@@ -16,6 +23,14 @@ function Category() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState(null);
   const [form] = Form.useForm();
+
+  // Lấy quyền từ Redux Store
+  const permissions = useSelector((state) => state.admin.permissions);
+
+  // Kiểm tra quyền
+  const canCreate = permissions.includes("CREATE_CATEGORY");
+  const canUpdate = permissions.includes("UPDATE_CATEGORY");
+  const canDelete = permissions.includes("DELETE_CATEGORY");
 
   const handleOk = async () => {
     setLoading(true);
@@ -48,73 +63,10 @@ function Category() {
     fetchApi();
   }, []);
 
-  const columns = [
-    {
-      title: "STT",
-      key: "index",
-      render: (text, record, index) => <a>{index + 1}</a>,
-    },
-    {
-      title: "Tên",
-      dataIndex: "title",
-      key: "title",
-    },
-    {
-      title: "Mô tả",
-      dataIndex: "description",
-      key: "description",
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      render: (status, record) => (
-        <Tag
-          color={status == true ? "green" : "red"}
-          onClick={() => handleChangeStatus(record.id, status)}
-        >
-          {status == true ? "Hoạt động" : "Không hoạt động"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Tạo bởi",
-      dataIndex: "createdBy",
-      key: "createdBy",
-    },
-    {
-      title: "Cập nhật bởi",
-      dataIndex: "updatedBy",
-      key: "updatedBy",
-    },
-    {
-      title: "Hành động",
-      key: "action",
-      render: (_, category) => (
-        <Space size="middle">
-          <a onClick={() => handleEdit(category)}>Sửa</a>
-          <a onClick={() => handleDelete(category)}>Xóa</a>
-        </Space>
-      ),
-    },
-  ];
-
-  const data = categories.map((category) => {
-    return {
-      id: category.id,
-      title: category.title,
-      description: category.description,
-      status: category.status,
-      createdBy: category.createdBy,
-      updatedBy: category.updatedBy,
-    };
-  });
-
   const handleChangeStatus = async (categoryId, status) => {
     setLoading(true);
     try {
       const option = { status: !status };
-
       await patch(`category/change-status/${categoryId}`, option);
       message.success("Cập nhật trạng thái danh mục thành công");
       fetchApi();
@@ -144,7 +96,7 @@ function Category() {
       fetchApi();
     } catch (error) {
       setLoading(false);
-      message.error("Xóa dạnh mục thất bại");
+      message.error("Xóa danh mục thất bại");
     }
   };
 
@@ -152,7 +104,6 @@ function Category() {
     setLoading(true);
     try {
       const values = form.getFieldValue();
-
       await post("category/create", values);
       message.success("Tạo mới danh mục thành công");
       fetchApi();
@@ -163,23 +114,101 @@ function Category() {
     setIsModalCreateOpen(false);
   };
 
+  const columns = [
+    {
+      title: "STT",
+      key: "index",
+      render: (text, record, index) => <a>{index + 1}</a>,
+    },
+    {
+      title: "Tên",
+      dataIndex: "title",
+      key: "title",
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      render: (status, record) => (
+        <Tag
+          color={status == true ? "green" : "red"}
+          onClick={() => handleChangeStatus(record.id, status)}
+          className="button-change-status"
+        >
+          {status == true ? "Hoạt động" : "Không hoạt động"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Tạo bởi",
+      dataIndex: "createdBy",
+      key: "createdBy",
+    },
+    {
+      title: "Cập nhật bởi",
+      dataIndex: "updatedBy",
+      key: "updatedBy",
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      render: (_, category) => (
+        <Space size="middle">
+          {canUpdate && (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(category)}
+              default
+            />
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="Bạn có chắc chắn xóa tour này chứ ?"
+              okText="Có"
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(category)}
+            >
+              <Button icon={<DeleteOutlined />} danger />
+            </Popconfirm>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  const data = categories.map((category) => ({
+    id: category.id,
+    title: category.title,
+    description: category.description,
+    status: category.status,
+    createdBy: category.createdBy,
+    updatedBy: category.updatedBy,
+  }));
+
   return (
     <>
-      <div className="roles-container">
-        <Button
-          type="primary"
-          onClick={() => {
-            setIsModalCreateOpen(true);
-          }}
-        >
-          Thêm mới
-        </Button>
+      <div className="layout-container">
+        {canCreate && (
+          <Button
+            type="primary"
+            onClick={() => {
+              setIsModalCreateOpen(true);
+            }}
+          >
+            Thêm mới
+          </Button>
+        )}
         <Table
           columns={columns}
           dataSource={data}
           loading={loading}
           rowKey="id"
-          className="dashboard-table"
+          className="table-container"
         />
         {/* Edit Modal */}
         <Modal

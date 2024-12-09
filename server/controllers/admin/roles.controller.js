@@ -68,16 +68,33 @@ module.exports.getAll = async (req, res) => {
     const roles = await Role.findAll({
       where: {
         deleted: false
-      }
+      },
+      raw: true
     });
 
-    if (roles.length == 0) {
-      return res.status(400).json({
-        message: "Danh sách nhóm quyền rỗng"
-      })
-    }
+    const plainRecords = roles.map(async (role) => {
+      var createdBy = ""
+      var updatedBy = ""
+      if (role.createdBy !== null) {
+        const admin = await Admin.findByPk(role.createdBy);
+        createdBy = admin.get().fullName;
+      }
+      if (role.updatedBy !== null) {
+        const admin = await Admin.findByPk(role.updatedBy);
+        updatedBy = admin.get().fullName;
+      }
+
+
+      return {
+        ...role,
+        createdBy: createdBy,
+        updatedBy: updatedBy,
+      };
+    });
+
+    const result = await Promise.all(plainRecords);
     res.status(200).json({
-      roles: roles
+      roles: result
     })
   } catch (error) {
     console.log(error);
@@ -148,7 +165,6 @@ module.exports.getAll = async (req, res) => {
 module.exports.detail = async (req, res) => {
 
   try {
-
     const adminId = req.params.adminId;
 
     const admin = await Admin.findByPk(adminId);

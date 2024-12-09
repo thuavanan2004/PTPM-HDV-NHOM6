@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from "react";
+import { get, post, patch } from "../../utils/axios-http/axios-http";
+import { useSelector } from "react-redux";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import {
-  get,
-  post,
-  patch,
-  deleteMethod,
-} from "../../utils/axios-http/axios-http";
-import { Space, Table, Modal, message, Button, Form, Input, Tag } from "antd";
+  Space,
+  Table,
+  Modal,
+  message,
+  Button,
+  Form,
+  Input,
+  Tag,
+  Popconfirm,
+} from "antd";
 
 function Transportation() {
   const [transportations, setTransportations] = useState([]);
@@ -16,6 +23,14 @@ function Transportation() {
   const [information, setInformation] = useState("");
   const [transportationId, setTransportationId] = useState(null);
   const [form] = Form.useForm();
+
+  // Lấy quyền từ Redux Store
+  const permissions = useSelector((state) => state.admin.permissions);
+
+  // Kiểm tra quyền
+  const canCreate = permissions.includes("CREATE_TRANSPORTATION");
+  const canUpdate = permissions.includes("UPDATE_TRANSPORTATION");
+  const canDelete = permissions.includes("DELETE_TRANSPORTATION");
 
   const handleOk = async () => {
     setLoading(true);
@@ -75,6 +90,7 @@ function Transportation() {
         <Tag
           color={status == true ? "green" : "red"}
           onClick={() => handleChangeStatus(record.id, status)}
+          className="button-change-status"
         >
           {status == true ? "Hoạt động" : "Không hoạt động"}
         </Tag>
@@ -95,8 +111,23 @@ function Transportation() {
       key: "action",
       render: (_, transportation) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(transportation)}>Sửa</a>
-          <a onClick={() => handleDelete(transportation)}>Xóa</a>
+          {canUpdate && (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(transportation)}
+              default
+            />
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="Bạn có chắc chắn xóa tour này chứ ?"
+              okText="Có"
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(transportation)}
+            >
+              <Button icon={<DeleteOutlined />} danger />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -168,21 +199,23 @@ function Transportation() {
 
   return (
     <>
-      <div className="roles-container">
-        <Button
-          type="primary"
-          onClick={() => {
-            setIsModalCreateOpen(true);
-          }}
-        >
-          Thêm mới
-        </Button>
+      <div className="layout-container">
+        {canCreate && (
+          <Button
+            type="primary"
+            onClick={() => {
+              setIsModalCreateOpen(true);
+            }}
+          >
+            Thêm mới
+          </Button>
+        )}
         <Table
           columns={columns}
           dataSource={data}
           loading={loading}
           rowKey="id"
-          className="dashboard-table"
+          className="table-container"
         />
         {/* Edit Modal */}
         <Modal

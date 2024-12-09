@@ -30,6 +30,7 @@ const PrivateRoute = () => {
 
         const roleResponse = await get(`roles/detail/${adminId}`);
         const roleName = roleResponse.name;
+        const roleId = roleResponse.id;
 
         const permissionsResponse = await get(
           `roles/${roleResponse.id}/permissions`
@@ -38,7 +39,9 @@ const PrivateRoute = () => {
           (item) => item.name
         );
 
-        dispatch(setAdminInfo({ id: adminId, fullName, roleName, avatar }));
+        dispatch(
+          setAdminInfo({ id: adminId, fullName, roleId, roleName, avatar })
+        );
         dispatch(setPermissions(permissions));
 
         if (permissionsResponse.permissions.length > 0) {

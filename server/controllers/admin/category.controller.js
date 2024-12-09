@@ -4,6 +4,7 @@ const sequelize = require("../../config/database");
 const {
   QueryTypes
 } = require("sequelize");
+const Admin = require("../../models/admin.model");
 
 /**
  * @swagger
@@ -415,15 +416,38 @@ module.exports.getAllCategory = async (req, res) => {
     }
 
     const categories = await Category.findAll({
-      where: whereCondition
+      where: whereCondition,
+      raw: true
     });
+    const plainRecords = categories.map(async (category) => {
+      var createdBy = ""
+      var updatedBy = ""
+      if (category.createdBy !== null) {
+        const admin = await Admin.findByPk(category.createdBy);
+        createdBy = admin.get().fullName;
+      }
+      if (category.updatedBy !== null) {
+        const admin = await Admin.findByPk(category.updatedBy);
+        updatedBy = admin.get().fullName;
+      }
+
+
+      return {
+        ...category,
+        createdBy: createdBy,
+        updatedBy: updatedBy,
+      };
+    });
+
+    const result = await Promise.all(plainRecords);
+
 
     if (categories.length == 0) {
       return res.status(400).json("Danh sách category rỗng");
     }
 
     res.status(200).json({
-      categories: categories
+      categories: result
     })
   } catch (error) {
     console.log(error);

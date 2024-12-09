@@ -1,4 +1,5 @@
 const Departure = require("../../models/departure.model");
+const Admin = require("../../models/admin.model");
 
 /**
  * @swagger
@@ -343,15 +344,34 @@ module.exports.getAllDeparture = async (req, res) => {
     }
 
     const departures = await Departure.findAll({
-      where: whereCondition
+      where: whereCondition,
+      raw: true
     });
 
-    if (departures.length == 0) {
-      return res.status(400).json("Danh sách departures rỗng");
-    }
+    const plainRecords = departures.map(async (departure) => {
+      var createdBy = ""
+      var updatedBy = ""
+      if (departure.createdBy !== null) {
+        const admin = await Admin.findByPk(departure.createdBy);
+        createdBy = admin.get().fullName;
+      }
+      if (departure.updatedBy !== null) {
+        const admin = await Admin.findByPk(departure.updatedBy);
+        updatedBy = admin.get().fullName;
+      }
+
+
+      return {
+        ...departure,
+        createdBy: createdBy,
+        updatedBy: updatedBy,
+      };
+    });
+
+    const result = await Promise.all(plainRecords);
 
     res.status(200).json({
-      departures: departures
+      departures: result
     })
   } catch (error) {
     console.log(error);

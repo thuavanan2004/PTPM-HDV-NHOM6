@@ -17,8 +17,14 @@ import {
   Tag,
   Upload,
   Select,
+  Popconfirm,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import {
+  UploadOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
+import { useSelector } from "react-redux";
 const { Option } = Select;
 
 function Destination() {
@@ -34,6 +40,14 @@ function Destination() {
   const [parentId, setParentId] = useState(null);
   const [destinationId, setDestinationId] = useState(null);
   const [form] = Form.useForm();
+
+  // Lấy quyền từ Redux Store
+  const permissions = useSelector((state) => state.admin.permissions);
+
+  // Kiểm tra quyền
+  const canCreate = permissions.includes("CREATE_DESTINATION");
+  const canUpdate = permissions.includes("UPDATE_DESTINATION");
+  const canDelete = permissions.includes("DELETE_DESTINATION");
 
   const handleOk = async () => {
     setLoading(true);
@@ -98,8 +112,12 @@ function Destination() {
 
   const fetchFilteredDestinations = async (parentId) => {
     try {
-      const filteredData = await get(`destination/get-by-parent/${parentId}`);
-      setFilteredDestinations(filteredData);
+      if (parentId !== "") {
+        const filteredData = await get(`destination/get-by-parent/${parentId}`);
+        setFilteredDestinations(filteredData);
+      } else {
+        setFilteredDestinations([]);
+      }
     } catch (error) {
       message.error("Lỗi khi lấy dữ liệu con");
     }
@@ -141,6 +159,7 @@ function Destination() {
         <Tag
           color={status === true ? "green" : "red"}
           onClick={() => handleChangeStatus(record.id, status)}
+          className="button-change-status"
         >
           {status === true ? "Hoạt động" : "Không hoạt động"}
         </Tag>
@@ -167,8 +186,23 @@ function Destination() {
       key: "action",
       render: (_, destination) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(destination)}>Sửa</a>
-          <a onClick={() => handleDelete(destination)}>Xóa</a>
+          {canUpdate && (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(destination)}
+              default
+            />
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="Bạn có chắc chắn xóa tour này chứ ?"
+              okText="Có"
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(destination)}
+            >
+              <Button icon={<DeleteOutlined />} danger />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -253,7 +287,7 @@ function Destination() {
 
   return (
     <>
-      <div className="roles-container">
+      <div className="layout-container">
         <Select
           style={{ width: 200, marginBottom: 20 }}
           placeholder="Chọn danh mục cha"
@@ -262,23 +296,25 @@ function Destination() {
             fetchFilteredDestinations(value);
           }}
         >
+          <Option value="">Tất cả</Option>
           {renderDestinations(destinationsTree)}
         </Select>
-        <Button
-          type="primary"
-          onClick={() => {
-            setIsModalCreateOpen(true);
-          }}
-        >
-          Thêm mới
-        </Button>
+        {canCreate && (
+          <Button
+            type="primary"
+            onClick={() => {
+              setIsModalCreateOpen(true);
+            }}
+          >
+            Thêm mới
+          </Button>
+        )}
         <Table
           columns={columns}
           dataSource={data}
           loading={loading}
           rowKey="id"
-          className="dashboard-table"
-          style={{ marginTop: "30px" }}
+          className="table-container"
           pagination={{ pageSize: 8 }}
         />
         {/* Edit Modal */}

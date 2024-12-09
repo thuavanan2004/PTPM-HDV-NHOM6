@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { get, post, patch } from "../../utils/axios-http/axios-http"; // Make sure deleteMethod is not used here
-import { Space, Table, Modal, message, Button, Form, Input, Tag } from "antd";
+import {
+  Space,
+  Table,
+  Modal,
+  message,
+  Button,
+  Form,
+  Input,
+  Tag,
+  Popconfirm,
+} from "antd";
+import { useSelector } from "react-redux";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 function Departure() {
   const [departures, setDepartures] = useState([]);
@@ -11,6 +23,14 @@ function Departure() {
   const [information, setInformation] = useState("");
   const [departureId, setDepartureId] = useState(null);
   const [form] = Form.useForm();
+
+  // Lấy quyền từ Redux Store
+  const permissions = useSelector((state) => state.admin.permissions);
+
+  // Kiểm tra quyền
+  const canCreate = permissions.includes("CREATE_DEPARTURE");
+  const canUpdate = permissions.includes("UPDATE_DEPARTURE");
+  const canDelete = permissions.includes("DELETE_DEPARTURE");
 
   const handleOk = async () => {
     setLoading(true);
@@ -65,10 +85,11 @@ function Departure() {
       key: "status",
       render: (status, record) => (
         <Tag
-          color={status === true ? "green" : "red"}
+          color={status == 1 ? "green" : "red"}
           onClick={() => handleChangeStatus(record.id, status)}
+          className="button-change-status"
         >
-          {status === true ? "Hoạt động" : "Không hoạt động"}
+          {status == 1 ? "Hoạt động" : "Không hoạt động"}
         </Tag>
       ),
     },
@@ -87,8 +108,23 @@ function Departure() {
       key: "action",
       render: (_, departure) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(departure)}>Sửa</a>
-          <a onClick={() => handleDelete(departure)}>Xóa</a>
+          {canUpdate && (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(departure)}
+              default
+            />
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="Bạn có chắc chắn xóa tour này chứ ?"
+              okText="Có"
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(departure)}
+            >
+              <Button icon={<DeleteOutlined />} danger />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -159,21 +195,23 @@ function Departure() {
 
   return (
     <>
-      <div className="roles-container">
-        <Button
-          type="primary"
-          onClick={() => {
-            setIsModalCreateOpen(true);
-          }}
-        >
-          Thêm mới
-        </Button>
+      <div className="layout-container">
+        {canCreate && (
+          <Button
+            type="primary"
+            onClick={() => {
+              setIsModalCreateOpen(true);
+            }}
+          >
+            Thêm mới
+          </Button>
+        )}
         <Table
           columns={columns}
           dataSource={data}
           loading={loading}
           rowKey="id"
-          className="dashboard-table"
+          className="table-container"
         />
         {/* Edit Modal */}
         <Modal

@@ -73,7 +73,7 @@ function Order() {
     },
   ];
   return (
-    <div className="order-container">
+    <div className="layout-container">
       {isModalOpen && (
         <OrderDetail
           open={isModalOpen}
@@ -87,7 +87,7 @@ function Order() {
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 15 }}
-        className="dashboard-table"
+        className="table-container"
         onRow={(record) => ({
           onClick: () => handleRowClick(record),
         })}

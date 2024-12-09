@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import "./style.scss";
-import { Table, Space, Switch, message, Button } from "antd";
+import { Table, Space, Tag, message, Button, Popconfirm } from "antd";
 import { deleteMethod, get, patch } from "../../utils/axios-http/axios-http";
 import EditAccount from "./edit";
 import CreateAccount from "./create";
+import { useSelector } from "react-redux";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import moment from "moment";
 
 function Account() {
   const [accounts, setAccounts] = useState([]);
@@ -13,6 +16,14 @@ function Account() {
   const [isModalCreateOpen, setIsModalCreateOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [roleId, setRoleId] = useState(null);
+
+  // Lấy quyền từ Redux Store
+  const permissions = useSelector((state) => state.admin.permissions);
+
+  // Kiểm tra quyền
+  const canCreate = permissions.includes("CREATE_CATEGORY");
+  const canUpdate = permissions.includes("UPDATE_CATEGORY");
+  const canDelete = permissions.includes("DELETE_CATEGORY");
 
   const fetchRoles = async () => {
     try {
@@ -47,7 +58,7 @@ function Account() {
       dataIndex: "avatar",
       key: "avatar",
       render: (avatar) => (
-        <img src={avatar} alt="avatar" style={{ width: 100 }} />
+        <img src={avatar} alt="avatar" style={{ width: 100, height: 100 }} />
       ),
     },
     {
@@ -64,13 +75,15 @@ function Account() {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
+
       render: (status, record) => (
-        <Switch
-          checked={status}
-          onChange={() => handleStatusChange(record)}
-          checkedChildren="Hoạt động"
-          unCheckedChildren="Không hoạt động"
-        />
+        <Tag
+          color={status === true ? "green" : "red"}
+          onClick={() => handleChangeStatus(record)}
+          className="button-change-status"
+        >
+          {status === true ? "Hoạt động" : "Không hoạt động"}
+        </Tag>
       ),
     },
     {
@@ -82,20 +95,36 @@ function Account() {
       title: "Tạo lúc",
       dataIndex: "createdAt",
       key: "createdAt",
+      render: (createdAt) => moment(createdAt).format("DD-MM-YYYY"),
     },
     {
       title: "Hành động",
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <a onClick={() => handleEdit(record)}>Sửa</a>
-          <a onClick={() => handleDelete(record)}>Xóa</a>
+          {canUpdate && (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+              default
+            />
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="Bạn có chắc chắn xóa tour này chứ ?"
+              okText="Có"
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(record)}
+            >
+              <Button icon={<DeleteOutlined />} danger />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
   ];
 
-  const handleStatusChange = async (record) => {
+  const handleChangeStatus = async (record) => {
     setLoading(true);
     const status = { status: !record.status };
     console.log(status);
@@ -136,16 +165,18 @@ function Account() {
 
   return (
     <>
-      <div className="account-container">
-        <Button type="primary" onClick={handleCreate}>
-          Thêm mới
-        </Button>
+      <div className="layout-container">
+        {canCreate && (
+          <Button type="primary" onClick={handleCreate}>
+            Thêm mới
+          </Button>
+        )}
         <Table
           columns={columns}
           dataSource={accounts}
           loading={loading}
           rowKey="id"
-          className="dashboard-table"
+          className="table-container"
         />
       </div>
 

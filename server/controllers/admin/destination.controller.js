@@ -2,6 +2,7 @@ const sequelize = require("../../config/database");
 const Destination = require("../../models/destination.model");
 const slugify = require("slugify");
 const createTreeHelper = require("../../helpers/createTree.helper");
+const Admin = require("../../models/admin.model");
 
 /**
  * @swagger
@@ -518,12 +519,6 @@ module.exports.getAllDestination = async (req, res) => {
 
     const total = countResult.total;
 
-    // Nếu không có bản ghi
-    if (destinations.length === 0) {
-      return res.status(400).json({
-        message: "Danh sách rỗng"
-      });
-    }
 
     // Phản hồi kết quả
     res.status(200).json({
@@ -888,25 +883,46 @@ module.exports.getDestination = async (req, res) => {
 // [GET] /destination/get-tree
 module.exports.getTree = async (req, res) => {
   try {
-    const data = await Destination.findAll({
+    const destinations = await Destination.findAll({
       where: {
         deleted: false,
-      }
+      },
+      raw: true
     })
-    if (data.length == 0) {
-      return res.status(400).json({
-        message: "Danh sách destination rỗng"
-      })
-    }
-    const tree = createTreeHelper(data)
+    const plainRecords = destinations.map(async (destination) => {
+      var createdBy = ""
+      var updatedBy = ""
+      if (destination.createdBy !== null) {
+        const admin = await Admin.findByPk(destination.createdBy);
+        createdBy = admin.get().fullName;
+      }
+      if (destination.updatedBy !== null) {
+        const admin = await Admin.findByPk(destination.updatedBy);
+        updatedBy = admin.get().fullName;
+      }
+
+
+      return {
+        ...destination,
+        createdBy: createdBy,
+        updatedBy: updatedBy,
+      };
+    });
+
+    const result = await Promise.all(plainRecords);
+
+
+    const tree = createTreeHelper(result)
     const formatChildren = (node) => {
       return {
-        id: node.dataValues.id,
-        title: node.dataValues.title,
-        image: node.dataValues.image,
-        information: node.dataValues.information,
-        status: node.dataValues.status,
-        parentId: node.dataValues.parentId,
+        id: node.id,
+        title: node.title,
+        image: node.image,
+        information: node.information,
+        status: node.status,
+        createdBy: node.createdBy,
+        updatedBy: node.updatedBy,
+        parentId: node.parentId,
         children: node.children ? node.children.map(formatChildren) : []
       };
     };

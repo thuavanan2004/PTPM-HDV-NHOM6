@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./style.scss";
 import { Table, Button, message, Spin } from "antd";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { deleteMethod, get, post } from "../../utils/axios-http/axios-http";
-// import { clearPermissions, setPermissions } from "../../slice/adminSlice";
+import { setPermissions as updateReduxPermissions } from "../../slice/adminSlice";
 
 function Permissions() {
   const [permissions, setPermissions] = useState([]);
@@ -13,7 +13,9 @@ function Permissions() {
   });
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [adminId, setAdminId] = useState();
   const dispatch = useDispatch();
+  const recordAdmin = useSelector((state) => state.admin);
 
   const fetchPermissions = async () => {
     setLoading(true);
@@ -155,6 +157,17 @@ function Permissions() {
       );
       message.success("Cập nhật phân quyền thành công!");
       fetchPermissions();
+      setNewPermissions({
+        added: [],
+        removed: [],
+      });
+      const adminId = recordAdmin.admin.roleId;
+
+      const permissionUpdateNow = permissions
+        .filter((permission) => permission.roleIds.includes(adminId))
+        .map((permission) => permission.name);
+
+      dispatch(updateReduxPermissions(permissionUpdateNow));
     } catch (error) {
       message.error("Lỗi khi cập nhật phân quyền");
       console.error(error);
@@ -197,12 +210,12 @@ function Permissions() {
   return (
     <>
       <Spin spinning={loading}>
-        <div className="permissions-container">
+        <div className="layout-container">
           <Button type="primary" onClick={handleClick}>
             Cập nhật phân quyền
           </Button>
           <Table
-            className="dashboard-table"
+            className="table-container"
             columns={columns}
             dataSource={data}
             pagination={false}

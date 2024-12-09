@@ -8,11 +8,12 @@ import {
   Select,
   DatePicker,
   Input,
+  Popconfirm,
 } from "antd";
 import { get, patch } from "../../utils/axios-http/axios-http";
 import "./style.scss";
 import { useNavigate } from "react-router-dom";
-import checkPermission from "../../utils/axios-http/checkPermission";
+import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 
 import moment from "moment";
@@ -29,6 +30,9 @@ function Tour() {
   const [transportations, setTransportations] = useState([]);
   const [typeButtonOne, setTypeButtonOne] = useState("");
   const [typeButtonTwo, setTypeButtonTwo] = useState("");
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [valueCheckbox, setValueCheckbox] = useState("");
+  const [selectAll, setSelectAll] = useState(false);
   const [filters, setFilters] = useState({
     destinationTo: "",
     departureFrom: "",
@@ -40,23 +44,16 @@ function Tour() {
     sortOrder: "",
     title: "",
   });
-  // const [canCreate, setCanCreate] = useState(false);
-  // const [canView, setCanView] = useState(false);
-  // const [canUpdate, setCanEdit] = useState(false);
-  // const [canDelete, setCanDelete] = useState(false);
 
   const navigate = useNavigate();
 
-  // const permissions = useSelector((state) => state.admin.permissions);
+  // Lấy quyền từ Redux Store
+  const permissions = useSelector((state) => state.admin.permissions);
 
-  // useEffect(() => {
-  //   if (permissions.length > 0) {
-  //     setCanCreate(checkPermission("CREATE_TOUR"));
-  //     setCanView(checkPermission("READ_TOUR"));
-  //     setCanEdit(checkPermission("UPDATE_TOUR"));
-  //     setCanDelete(checkPermission("DELETE_TOUR"));
-  //   }
-  // }, [permissions]);
+  // Kiểm tra quyền
+  const canCreate = permissions.includes("CREATE_TOUR");
+  const canUpdate = permissions.includes("UPDATE_TOUR");
+  const canDelete = permissions.includes("DELETE_TOUR");
 
   const fetchDataTour = async () => {
     try {
@@ -184,8 +181,43 @@ function Tour() {
       </React.Fragment>
     ));
   };
+  const handleCheckboxChange = (tourId, checked) => {
+    if (checked) {
+      setSelectedRowKeys((prev) => [...prev, tourId]);
+    } else {
+      setSelectedRowKeys((prev) => prev.filter((id) => id !== tourId));
+    }
+  };
+
+  const handleChangeMultiple = async () => {
+    try {
+      setLoading(true);
+      const option = {
+        valueChange: valueCheckbox,
+        tourIds: selectedRowKeys,
+      };
+      await patch("tours/update-multiple", option);
+      message.success("Cập nhật tour thành công!");
+      setLoading(false);
+      setSelectedRowKeys([]);
+      fetchDataTour();
+    } catch (error) {
+      console.log(error);
+      message.error("Cập nhật tour thất bại!");
+    }
+  };
 
   const columns = [
+    {
+      key: "checkbox",
+      render: (_, record) => (
+        <input
+          type="checkbox"
+          checked={selectedRowKeys.includes(record.id)}
+          onChange={(e) => handleCheckboxChange(record.id, e.target.checked)}
+        />
+      ),
+    },
     {
       title: "STT",
       key: "index",
@@ -217,6 +249,7 @@ function Tour() {
         <Tag
           color={status ? "green" : "red"}
           onClick={() => handleStatusChange(record.id, status)}
+          className="button-change-status"
         >
           {status ? "Hoạt động" : "Không hoạt động"}
         </Tag>
@@ -230,6 +263,7 @@ function Tour() {
         <Tag
           color={isFeatured ? "green" : "red"}
           onClick={() => handleFeaturedChange(record.id, isFeatured)}
+          className="button-change-status"
         >
           {isFeatured ? "Nổi bật" : "Không nổi bật"}
         </Tag>
@@ -240,6 +274,26 @@ function Tour() {
       dataIndex: "adultPrice",
       key: "adultPrice",
       render: (adultPrice) => adultPrice.toLocaleString(),
+    },
+    {
+      title: "Danh mục",
+      dataIndex: "categories",
+      key: "categories",
+    },
+    {
+      title: "Khởi hành",
+      dataIndex: "departure",
+      key: "departure",
+    },
+    {
+      title: "Điểm đến",
+      dataIndex: "destination",
+      key: "destination",
+    },
+    {
+      title: "Phương tiện",
+      dataIndex: "transportation",
+      key: "transportation",
     },
     {
       title: "Ngày khởi hành",
@@ -258,13 +312,37 @@ function Tour() {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <Button onClick={() => navigate(`/tour-detail/${record.id}`)}>
-            Xem chi tiết
-          </Button>
-          <Button onClick={() => navigate(`/edit-tour/${record.id}`)}>
-            Sửa
-          </Button>
-          <Button onClick={() => removeTour(record.id)}>Xóa</Button>
+          <Button
+            onClick={() => navigate(`/tour-detail/${record.id}`)}
+            type="primary"
+            icon={<EyeOutlined />}
+            style={{ marginRight: 1 }}
+          ></Button>
+
+          {canUpdate && (
+            <Button
+              onClick={() => navigate(`/edit-tour/${record.id}`)}
+              type="default"
+              icon={<EditOutlined />}
+              style={{ marginLeft: 1 }}
+            />
+          )}
+
+          {canDelete && (
+            <Popconfirm
+              title="Bạn có chắc chắn xóa tour này chứ ?"
+              okText="Có"
+              cancelText="Hủy"
+              onConfirm={() => removeTour(record.id)}
+            >
+              <Button
+                type="danger"
+                icon={<DeleteOutlined />}
+                style={{ marginLeft: 1 }}
+                danger
+              />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -273,11 +351,32 @@ function Tour() {
   return (
     <div className="tour-container">
       <div style={{ marginBottom: 20 }}>
-        <Button
-          onClick={() => navigate("/create-new")}
-          style={{ background: "blue", color: "white" }}
+        {canCreate && (
+          <Button
+            onClick={() => navigate("/create-new")}
+            style={{ background: "blue", color: "white", marginRight: 10 }}
+          >
+            Tạo mới
+          </Button>
+        )}
+        <Select
+          style={{ marginRight: 10, width: 200 }}
+          placeholder="Chọn"
+          onChange={(value) => setValueCheckbox(value)}
         >
-          Tạo mới
+          <Select.Option value="status-true">Hoạt động</Select.Option>
+          <Select.Option value="status-false">Không hoạt động</Select.Option>
+          <Select.Option value="isFeatured-true">Nổi bật</Select.Option>
+          <Select.Option value="isFeatured-false">Không nổi bật</Select.Option>
+          <Select.Option value="delete-true">Xóa</Select.Option>
+        </Select>
+        <Button
+          onClick={handleChangeMultiple}
+          type="primary"
+          style={{ marginRight: 0 }}
+          disabled={selectedRowKeys.length === 0}
+        >
+          Áp dụng
         </Button>
 
         <Button

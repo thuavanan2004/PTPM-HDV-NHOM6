@@ -487,6 +487,8 @@ module.exports.create = async (req, res) => {
  */
 // [PATCH] /tours/edit/:tourId
 module.exports.edit = async (req, res) => {
+  console.log("ok");
+
   let transaction = await sequelize.transaction();
   const tourId = req.params.tourId;
   if (!tourId) {
@@ -506,6 +508,10 @@ module.exports.edit = async (req, res) => {
     images,
     tour_detail
   } = req.body;
+
+  console.log(tour_detail);
+  console.log("ok");
+
 
   try {
     const tour = await Tour.findOne({
@@ -649,23 +655,14 @@ module.exports.edit = async (req, res) => {
     // Update tour detail
     if (tour_detail && JSON.parse(tour_detail).length > 0) {
       const tourDetailParse = JSON.parse(tour_detail);
-
-      await Promise.all(tourDetailParse.map(async (item) => {
-        const tourDetailExist = TourDetail.findOne({
-          where: {
-            id: item.id,
-            tourId: tourId
-          }
-        })
-        if (!tourDetailExist) {
-          throw new Error("Tour detail không tồn tại!");
+      await TourDetail.destroy({
+        where: {
+          tourId: tourId
         }
+      })
+      await Promise.all(tourDetailParse.map(async (item) => {
 
-        // if (!item.adultPrice || !item.stock || !item.dayStart || !item.dayReturn) {
-        //   throw new Error("Yêu cầu gửi đủ thông tin tour_detail");
-        // }
-
-        return await TourDetail.update({
+        return await TourDetail.create({
           tourId: tourId,
           adultPrice: item.adultPrice,
           childrenPrice: item.childrenPrice || 0,
@@ -677,9 +674,6 @@ module.exports.edit = async (req, res) => {
           dayReturn: item.dayReturn,
           discount: item.discount || 0
         }, {
-          where: {
-            id: item.id
-          },
           transaction
         })
       }));
@@ -1550,9 +1544,7 @@ module.exports.updateTourFeatured = async (req, res) => {
 module.exports.updateMultiple = async (req, res) => {
   const {
     tourIds,
-    status,
-    isFeatured,
-    deleted
+    valueChange
   } = req.body;
 
   if (!tourIds || !Array.isArray(tourIds) || tourIds.length === 0) {
@@ -1562,10 +1554,14 @@ module.exports.updateMultiple = async (req, res) => {
   }
 
   try {
+    const [key, value] = valueChange.split("-");
+    const checked = ["status", "isFeatured", "deleted"].includes(key) && ["true", "false"].includes(value);
+    if (key == "" || value == "" || !checked) {
+      return res.status(400).json("Vui long gửi lên value đúng!")
+    }
+    const updatedValue = value === "true";
     const updatedTours = await Tour.update({
-      status,
-      isFeatured,
-      deleted
+      [key]: updatedValue
     }, {
       where: {
         id: tourIds

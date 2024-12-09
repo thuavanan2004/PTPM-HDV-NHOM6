@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import './edit.scss'
+import "./edit.scss";
 import { Modal, message } from "antd";
 import { patchForm } from "../../utils/axios-http/axios-http";
 
@@ -62,10 +62,20 @@ function EditAccount({ open, onClose, account, roles, roleId, fetchAccounts }) {
             <img
               src={avatar}
               alt="Avatar Preview"
-              style={{ width: 100, marginBottom: 10, marginLeft: '29px' }}
+              style={{
+                width: 100,
+                height: 100,
+                marginBottom: 10,
+                marginLeft: "29px",
+              }}
             />
           )}
-          <input style={{ marginLeft: '33px' }} type="file" accept="image/*" onChange={handleAvatarChange} />
+          <input
+            style={{ marginLeft: "33px" }}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarChange}
+          />
         </div>
         <div className="item">
           <label>Tên: </label>
@@ -73,7 +83,7 @@ function EditAccount({ open, onClose, account, roles, roleId, fetchAccounts }) {
             value={name}
             type="text"
             onChange={(e) => setName(e.target.value)}
-            style={{ marginLeft: '60px' }}
+            style={{ marginLeft: "60px" }}
           />
         </div>
         <div className="item">
@@ -82,7 +92,7 @@ function EditAccount({ open, onClose, account, roles, roleId, fetchAccounts }) {
             value={password}
             type="text"
             onChange={(e) => setPassword(e.target.value)}
-            style={{ marginLeft: '23px' }}
+            style={{ marginLeft: "23px" }}
           />
         </div>
         <div className="item">
@@ -91,7 +101,7 @@ function EditAccount({ open, onClose, account, roles, roleId, fetchAccounts }) {
             value={email}
             type="email"
             onChange={(e) => setEmail(e.target.value)}
-            style={{ marginLeft: '48px' }}
+            style={{ marginLeft: "48px" }}
           />
         </div>
         <div className="item">

@@ -1,4 +1,5 @@
 const Transportation = require("../../models/transportation.model");
+const Admin = require("../../models/admin.model");
 
 /**
  * @swagger
@@ -369,15 +370,34 @@ module.exports.getAllTransportation = async (req, res) => {
     }
 
     const transportations = await Transportation.findAll({
-      where: whereCondition
+      where: whereCondition,
+      raw: true
     });
 
-    if (transportations.length == 0) {
-      return res.status(400).json("Danh sách transportation rỗng");
-    }
+    const plainRecords = transportations.map(async (transportation) => {
+      var createdBy = ""
+      var updatedBy = ""
+      if (transportation.createdBy !== null) {
+        const admin = await Admin.findByPk(transportation.createdBy);
+        createdBy = admin.get().fullName;
+      }
+      if (transportation.updatedBy !== null) {
+        const admin = await Admin.findByPk(transportation.updatedBy);
+        updatedBy = admin.get().fullName;
+      }
+
+
+      return {
+        ...transportation,
+        createdBy: createdBy,
+        updatedBy: updatedBy,
+      };
+    });
+
+    const result = await Promise.all(plainRecords);
 
     res.status(200).json({
-      transportations: transportations
+      transportations: result
     })
   } catch (error) {
     console.log(error);

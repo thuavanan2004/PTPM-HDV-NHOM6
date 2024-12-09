@@ -1,6 +1,6 @@
 // src/components/Account/ModalCreateAccount.js
 import React, { useState, useEffect } from "react";
-import './create.scss'
+import "./create.scss";
 import { Modal, message } from "antd";
 import { postForm } from "../../utils/axios-http/axios-http";
 
@@ -65,16 +65,23 @@ const ModalCreateAccount = ({ onClose, fetchAccounts, open, roles }) => {
       <form className="formUpdateAccount">
         <div className="item">
           <label>Ảnh đại diện: </label>
-          <img
-            src={avatar}
-            alt="Img Preview"
-            style={{ width: 100, marginBottom: 10, marginLeft: '29px' }}
-          />
+          {avatar && (
+            <img
+              src={avatar}
+              alt="Img Preview"
+              style={{
+                width: 100,
+                height: 100,
+                marginBottom: 10,
+                marginLeft: "29px",
+              }}
+            />
+          )}
           <input
             type="file"
             accept="image/*"
             onChange={handleNewAvatarChange}
-            style={{ marginLeft: '33px' }}
+            style={{ marginLeft: "33px" }}
           />
         </div>
         <div className="item">
@@ -83,7 +90,7 @@ const ModalCreateAccount = ({ onClose, fetchAccounts, open, roles }) => {
             value={name}
             type="text"
             onChange={(e) => setName(e.target.value)}
-            style={{ marginLeft: '60px' }}
+            style={{ marginLeft: "60px" }}
           />
         </div>
         <div className="item">
@@ -92,7 +99,7 @@ const ModalCreateAccount = ({ onClose, fetchAccounts, open, roles }) => {
             value={password}
             type="text"
             onChange={(e) => setPassword(e.target.value)}
-            style={{ marginLeft: '23px' }}
+            style={{ marginLeft: "23px" }}
           />
         </div>
         <div className="item">
@@ -101,7 +108,7 @@ const ModalCreateAccount = ({ onClose, fetchAccounts, open, roles }) => {
             value={email}
             type="email"
             onChange={(e) => setEmail(e.target.value)}
-            style={{ marginLeft: '48px' }}
+            style={{ marginLeft: "48px" }}
           />
         </div>
         <div className="item">
