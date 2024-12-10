@@ -32,7 +32,6 @@ function Tour() {
   const [typeButtonTwo, setTypeButtonTwo] = useState("");
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [valueCheckbox, setValueCheckbox] = useState("");
-  const [selectAll, setSelectAll] = useState(false);
   const [filters, setFilters] = useState({
     destinationTo: "",
     departureFrom: "",

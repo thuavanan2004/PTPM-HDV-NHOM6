@@ -125,14 +125,15 @@ module.exports.tours = async (req, res) => {
     });
 
     const mostBookedTourQuery = `
-    SELECT tours.id, tours.title, COUNT(order_item.id) AS orderCount
+    SELECT tours.id, tours.title, tours.code, tour_detail.adultPrice, images.source, COUNT(DISTINCT order_item.id) AS count
     FROM tours 
     LEFT JOIN tour_detail ON tour_detail.tourId = tours.id
     JOIN order_item ON order_item.tourDetailId = tour_detail.id
+    JOIN images ON images.tourId = tours.id
     GROUP BY tours.id
-    HAVING orderCount > 0
-    ORDER BY orderCount DESC
-    LIMIT 3
+    HAVING count > 0
+    ORDER BY count DESC
+    LIMIT 5
     `;
 
     const mostBookedTour = await sequelize.query(mostBookedTourQuery, {
@@ -142,16 +143,42 @@ module.exports.tours = async (req, res) => {
 
     // Tour được thêm vào danh sách yêu thích nhiều nhất
     const mostFavoritedTourQuery = `
-    SELECT tours.id, tours.title, COUNT(favorites.id) AS favoriteCount
+    SELECT tours.id, tours.title, tours.code, tour_detail.adultPrice, images.source, COUNT(DISTINCT favorites.id) AS count
     FROM tours 
+    LEFT JOIN tour_detail ON tour_detail.tourId = tours.id
     LEFT JOIN favorites ON favorites.tourId = tours.id
+    JOIN images ON images.tourId = tours.id
     GROUP BY tours.id
-    HAVING favoriteCount > 0
-    ORDER BY favoriteCount DESC
-    LIMIT 3;
+    HAVING count > 0
+    ORDER BY count DESC
+    LIMIT 5;
     `;
 
     const mostFavoritedTour = await sequelize.query(mostFavoritedTourQuery, {
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    // Tour bị hủy nhiều nhất 
+    const mostCancelledTourQuery = `
+        SELECT 
+        tours.id, 
+        tours.title, 
+        tours.code, 
+        tour_detail.adultPrice, 
+        images.source, 
+        COUNT(DISTINCT orders.id) AS count
+    FROM tours
+    LEFT JOIN tour_detail ON tour_detail.tourId = tours.id
+    LEFT JOIN images ON images.tourId = tours.id
+    INNER JOIN order_item ON order_item.tourDetailId = tour_detail.id
+    INNER JOIN orders ON orders.id = order_item.orderId
+    WHERE orders.status = 'cancelled'
+    GROUP BY tours.id
+    HAVING count > 0
+    ORDER BY count DESC
+    LIMIT 5;
+    `;
+    const mostCancelledTour = await sequelize.query(mostCancelledTourQuery, {
       type: sequelize.QueryTypes.SELECT
     });
 
@@ -193,6 +220,7 @@ module.exports.tours = async (req, res) => {
       activeTours,
       inactiveTours,
       mostBookedTour,
+      mostCancelledTour,
       featuredTours,
       mostFavoritedTour,
       monthlyStats,
@@ -738,19 +766,20 @@ module.exports.orders = async (req, res) => {
 
     const canceledOrders = await Order.count({
       where: {
-        status: 'canceled'
+        status: 'cancelled'
       }
     });
 
     // Thống kê doanh thu theo tháng
     const revenueByMonthQuery = `
       SELECT
-        YEAR(orders.createdAt) AS year,
-        MONTH(orders.createdAt) AS month,
-        SUM(transactions.amount) AS revenue
+        YEAR(orders.orderDate) AS year,
+        MONTH(orders.orderDate) AS month,
+        SUM(transactions.amount) AS revenue,
+        COUNT(orders.id) as orderCount
       FROM orders
       JOIN transactions ON transactions.id = orders.transactionId
-      GROUP BY YEAR(orders.createdAt), MONTH(orders.createdAt)
+      GROUP BY YEAR(orders.orderDate), MONTH(orders.orderDate)
       ORDER BY year DESC, month DESC
     `;
 
@@ -793,13 +822,13 @@ module.exports.orders = async (req, res) => {
     // Số đơn hàng được hủy trong tháng
     const cancellationRateQuery = `
     SELECT
-      YEAR(createdAt) AS year,
-      MONTH(createdAt) AS month,
+      YEAR(orderDate) AS year,
+      MONTH(orderDate) AS month,
       COUNT(CASE WHEN status = 'cancelled' THEN 1 END) AS canceledCount,
       COUNT(id) AS totalOrders,
       (COUNT(CASE WHEN status = 'cancelled' THEN 1 END) / COUNT(id)) * 100 AS cancelRate
     FROM orders
-    GROUP BY YEAR(createdAt), MONTH(createdAt)
+    GROUP BY YEAR(orderDate), MONTH(orderDate)
     ORDER BY year DESC, month DESC;
     `;
 

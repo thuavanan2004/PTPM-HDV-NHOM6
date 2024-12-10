@@ -86,11 +86,12 @@ function Order() {
         columns={columns}
         rowKey="id"
         loading={loading}
-        pagination={{ pageSize: 15 }}
+        pagination={{ pageSize: 12 }}
         className="table-container"
         onRow={(record) => ({
           onClick: () => handleRowClick(record),
         })}
+        style={{ cursor: "pointer" }}
       />
     </div>
   );

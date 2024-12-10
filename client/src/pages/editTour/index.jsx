@@ -138,6 +138,9 @@ function EditTour() {
       if (file.originFileObj) {
         formData.append("images", file.originFileObj);
       }
+      if (file.url != "") {
+        formData.append("images", file.url);
+      }
     });
 
     try {

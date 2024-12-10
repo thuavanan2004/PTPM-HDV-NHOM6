@@ -487,8 +487,6 @@ module.exports.create = async (req, res) => {
  */
 // [PATCH] /tours/edit/:tourId
 module.exports.edit = async (req, res) => {
-  console.log("ok");
-
   let transaction = await sequelize.transaction();
   const tourId = req.params.tourId;
   if (!tourId) {
@@ -508,9 +506,6 @@ module.exports.edit = async (req, res) => {
     images,
     tour_detail
   } = req.body;
-
-  console.log(tour_detail);
-  console.log("ok");
 
 
   try {
@@ -642,9 +637,16 @@ module.exports.edit = async (req, res) => {
 
     // Update images
     if (images && Array.isArray(images) && images.length > 0) {
-      const dataImages = images.map((file, index) => ({
+      await Image.destroy({
+        where: {
+          tourId
+        },
+        transaction
+      })
+
+      const dataImages = images.map((image, index) => ({
         tourId,
-        source: file,
+        source: image,
       }));
 
       await Image.bulkCreate(dataImages, {
@@ -655,29 +657,50 @@ module.exports.edit = async (req, res) => {
     // Update tour detail
     if (tour_detail && JSON.parse(tour_detail).length > 0) {
       const tourDetailParse = JSON.parse(tour_detail);
-      await TourDetail.destroy({
-        where: {
-          tourId: tourId
-        }
-      })
-      await Promise.all(tourDetailParse.map(async (item) => {
 
-        return await TourDetail.create({
-          tourId: tourId,
-          adultPrice: item.adultPrice,
-          childrenPrice: item.childrenPrice || 0,
-          childPrice: item.childPrice || 0,
-          babyPrice: item.babyPrice || 0,
-          singleRoomSupplementPrice: item.singleRoomSupplementPrice || 0,
-          stock: item.stock,
-          dayStart: item.dayStart,
-          dayReturn: item.dayReturn,
-          discount: item.discount || 0
-        }, {
-          transaction
-        })
+      await Promise.all(tourDetailParse.map(async (item) => {
+        // Kiểm tra nếu bản ghi đã tồn tại, nếu có thì cập nhật, nếu không thì tạo mới
+        const existingTourDetail = await TourDetail.findOne({
+          where: {
+            tourId: tourId,
+            dayStart: item.dayStart, // Có thể sử dụng dayStart hoặc bất kỳ thuộc tính nào duy nhất
+          }
+        });
+
+        if (existingTourDetail) {
+          // Nếu bản ghi tồn tại, cập nhật
+          await existingTourDetail.update({
+            adultPrice: item.adultPrice,
+            childrenPrice: item.childrenPrice || 0,
+            childPrice: item.childPrice || 0,
+            babyPrice: item.babyPrice || 0,
+            singleRoomSupplementPrice: item.singleRoomSupplementPrice || 0,
+            stock: item.stock,
+            dayReturn: item.dayReturn,
+            discount: item.discount || 0
+          }, {
+            transaction
+          });
+        } else {
+          // Nếu bản ghi không tồn tại, tạo mới
+          await TourDetail.create({
+            tourId: tourId,
+            adultPrice: item.adultPrice,
+            childrenPrice: item.childrenPrice || 0,
+            childPrice: item.childPrice || 0,
+            babyPrice: item.babyPrice || 0,
+            singleRoomSupplementPrice: item.singleRoomSupplementPrice || 0,
+            stock: item.stock,
+            dayStart: item.dayStart,
+            dayReturn: item.dayReturn,
+            discount: item.discount || 0
+          }, {
+            transaction
+          });
+        }
       }));
     }
+
 
     await transaction.commit();
     res.status(200).json("Cập nhật tour thành công");
