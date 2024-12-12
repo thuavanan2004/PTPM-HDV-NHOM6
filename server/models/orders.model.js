@@ -46,7 +46,7 @@ const Order = sequelize.define('Order', {
   status: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'Pending'
+    defaultValue: 'pending'
   },
   deleted: {
     type: DataTypes.BOOLEAN,

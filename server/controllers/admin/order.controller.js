@@ -59,14 +59,45 @@ const sendEmailCofirmOrderHelper = require("../../helpers/sendEmailCofirmOrder.h
 
 // [GET] /order/get-all
 module.exports.getAllOrders = async (req, res) => {
-  const orders = await Order.findAll({
-    where: {
-      deleted: false
+  try {
+    const {
+      status
+    } = req.query;
+
+    const listStatus = ['pending', 'confirmed', 'cancelled'];
+    if (!listStatus.includes(status) && status) {
+      return res.status(400).json("Vui lòng gửi lên status đúng!")
     }
-  })
-  res.status(200).json({
-    orders: orders
-  })
+    const records = await Order.findAll({
+      where: {
+        deleted: false,
+        status: status || "pending"
+      },
+      raw: true
+    })
+
+    const orders = await Promise.all(records.map(async (record) => {
+      const transaction = await Transaction.findOne({
+        where: {
+          id: record.transactionId
+        },
+        raw: true
+      });
+      return {
+        ...record,
+        amount: transaction.amount || 0,
+        transactionStatus: transaction.status || "",
+        paymentMethod: transaction.paymentMethod || ""
+      }
+    }))
+
+    res.status(200).json({
+      orders: orders
+    })
+  } catch (error) {
+    res.status(500).json("Lỗi lấy danh sách đơn hàng");
+    console.log(error);
+  }
 }
 
 /**
@@ -320,6 +351,80 @@ module.exports.changeStatusTransaction = async (req, res) => {
     console.log(error);
     res.status(500).json({
       message: "Lỗi khi thay đổi trạng thái transaction"
+    })
+  }
+}
+
+// [PATCH] /order/edit
+module.exports.edit = async (req, res) => {
+  const {
+    orderId,
+    orderItemId,
+    fullName,
+    address,
+    email,
+    phoneNumber,
+    note,
+    status,
+    adultPrice,
+    childrenPrice,
+    childPrice,
+    babyPrice,
+    singleRoomSupplementPrice,
+    adultQuantity,
+    childrenQuantity,
+    childQuantity,
+    babyQuantity,
+    singleRoomSupplementQuantity
+  } = req.body;
+  console.log(req.body);
+
+  if (!orderId || !orderItemId) {
+    return res.status(400).json("Vui lòng gửi lên id của order và orderItem");
+  }
+  try {
+    const order = await Order.findByPk(orderId);
+    if (!order) {
+      return res.status(400).json({
+        message: "Order không tồn tại"
+      })
+    };
+    const orderItem = await OrderItem.findByPk(orderItemId);
+    if (!orderItem) {
+      return res.status(400).json({
+        message: "OrderItem không tồn tại"
+      })
+    };
+    await order.update({
+      fullName: fullName || order.fullName,
+      address: address || order.address,
+      email: email || order.email,
+      phoneNumber: phoneNumber || order.phoneNumber,
+      note: note || order.note,
+      status: status || order.status
+    });
+
+    await orderItem.update({
+      adultPrice: adultPrice || orderItem.adultPrice,
+      adultQuantity: adultQuantity || orderItem.adultQuantity,
+      childrenPrice: childrenPrice || orderItem.childrenPrice,
+      childrenQuantity: childrenQuantity || orderItem.childrenQuantity,
+      childPrice: childPrice || orderItem.childPrice,
+      childQuantity: childQuantity || orderItem.childQuantity,
+      babyPrice: babyPrice || orderItem.babyPrice,
+      babyQuantity: babyQuantity || orderItem.babyQuantity,
+      singleRoomSupplementPrice: singleRoomSupplementPrice || orderItem.singleRoomSupplementPrice,
+      singleRoomSupplementQuantity: singleRoomSupplementQuantity || orderItem.singleRoomSupplementQuantity
+    })
+
+    res.status(200).json({
+      message: "Cập nhật trạng thái đơn hàng thành công!"
+    })
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Lỗi khi thay đổi trạng thái đơn hàng"
     })
   }
 }

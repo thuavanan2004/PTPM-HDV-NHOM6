@@ -17,6 +17,8 @@ import Account from "./pages/account";
 import PrivateRoute from "./components/privateRoute";
 import EditTour from "./pages/editTour/";
 import checkPermission from "./utils/axios-http/checkPermission";
+import OrderDetail from "./pages/order/detail";
+import OrderEdit from "./pages/order/edit";
 
 function App() {
   const routes = useRoutes([
@@ -74,6 +76,22 @@ function App() {
               path: "/orders",
               element: checkPermission("READ_ORDER") ? (
                 <Order />
+              ) : (
+                <Dashboard />
+              ),
+            },
+            {
+              path: "/orders/detail/:orderId",
+              element: checkPermission("READ_ORDER") ? (
+                <OrderDetail />
+              ) : (
+                <Dashboard />
+              ),
+            },
+            {
+              path: "/orders/edit/:orderId",
+              element: checkPermission("UPDATE_ORDER") ? (
+                <OrderEdit />
               ) : (
                 <Dashboard />
               ),

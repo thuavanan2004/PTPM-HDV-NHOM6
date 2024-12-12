@@ -13,6 +13,8 @@ router.get("/order-item/:orderId", checkPermission("READ_ORDER"), controllers.or
 
 router.patch("/change-status-transaction/:transactionId", checkPermission("UPDATE_ORDER"), controllers.changeStatusTransaction);
 
+router.patch("/edit", checkPermission("UPDATE_ORDER"), controllers.edit);
+
 router.patch("/change-status-order/:orderId", checkPermission("UPDATE_ORDER"), controllers.changeStatusOrder);
 
 router.patch("/remove-order/:orderId", checkPermission("DELETE_ORDER"), controllers.removeOrder)
