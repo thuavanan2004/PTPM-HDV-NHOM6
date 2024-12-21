@@ -7,7 +7,7 @@ const generateOtpHelper = require("../../helpers/generateOtp.helper");
 const sendEmailOtpHelper = require("../../helpers/sendEmailOtp.helper");
 const ForgotPassword = require("../../models/forgot-password.model");
 const userValidate = require("../../validates/user.validate");
-
+const admin = require("../../config/firebase");
 /**
  * @swagger
  * /auth/register:
@@ -731,3 +731,130 @@ module.exports.forgotPasswordReset = async (req, res) => {
     });
   }
 }
+
+/**
+ * @swagger
+ * /auth/firebase/login:
+ *   post:
+ *     summary: Đăng nhập với Firebase
+ *     description: Đăng nhập người dùng thông qua Firebase ID token.
+ *     tags:
+ *       - Auth
+ *     parameters:
+ *       - in: body
+ *         name: body
+ *         description: Dữ liệu đăng nhập Firebase
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             idToken:
+ *               type: string
+ *               description: Firebase ID Token nhận được từ phía client.
+ *               example: "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijh..."
+ *     responses:
+ *       200:
+ *         description: Đăng nhập thành công và trả về accessToken, refreshToken
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Đăng nhập thành công"
+ *             result:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   example: "access_token_example"
+ *                 refreshToken:
+ *                   type: string
+ *                   example: "refresh_token_example"
+ *       401:
+ *         description: Lỗi xác thực, token không hợp lệ
+ *         schema:
+ *           type: object
+ *           properties:
+ *             message:
+ *               type: string
+ *               example: "Invalid Firebase token"
+ */
+
+
+module.exports.firebaseLogin = async (req, res) => {
+  const {
+    idToken
+  } = req.body;
+
+  try {
+    // Xác thực idToken với Firebase Admin SDK
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const firebaseUid = decodedToken.uid;
+
+    // Kiểm tra xem người dùng đã có trong cơ sở dữ liệu chưa
+    let user = await User.findOne({
+      where: {
+        firebaseUid
+      }
+    });
+
+    // Nếu chưa có người dùng, tạo mới
+    if (!user) {
+      user = await User.create({
+        firebaseUid,
+        email: decodedToken.email
+      });
+    }
+
+    // Tạo access token và refresh token
+    const accessToken = jwt.sign({
+      userId: user.id
+    }, 'secretAccessKey', {
+      expiresIn: '1h'
+    });
+    const refreshToken = jwt.sign({
+      userId: user.id
+    }, 'secretRefreshKey', {
+      expiresIn: '7d'
+    });
+
+    // Kiểm tra và lưu refresh token
+    const existingToken = await RefreshToken.findOne({
+      where: {
+        userId: user.id
+      }
+    });
+
+    if (existingToken) {
+      existingToken.token = refreshToken;
+      await existingToken.save();
+    } else {
+      await RefreshToken.create({
+        userId: user.id,
+        token: refreshToken
+      });
+    }
+
+    // Gửi refreshToken qua cookie cho frontend
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, // Chuyển thành true khi deploy vào môi trường production
+      path: "/",
+      sameSite: "strict",
+    });
+
+    // Trả về accessToken và refreshToken cho frontend
+    res.status(200).json({
+      message: "Đăng nhập thành công",
+      result: {
+        accessToken,
+        refreshToken
+      }
+    });
+  } catch (error) {
+    console.error("Google login failed:", error);
+    res.status(401).send({
+      message: "Invalid Google token"
+    });
+  }
+};

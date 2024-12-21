@@ -6,6 +6,8 @@
 # testing
 /coverage
 
+service-account.json
+
 # production
 /build
 

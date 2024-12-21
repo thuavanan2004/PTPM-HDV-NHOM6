@@ -17,5 +17,7 @@ router.post("/forgot-password/verify", controllers.forgotPasswordVerify);
 
 router.patch("/forgot-password/reset", controllers.forgotPasswordReset);
 
+router.post("/firebase/login", controllers.firebaseLogin);
+
 
 module.exports = router;
