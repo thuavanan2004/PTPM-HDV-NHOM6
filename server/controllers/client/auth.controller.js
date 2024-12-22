@@ -150,10 +150,10 @@ module.exports.register = async (req, res) => {
  *             properties:
  *               email:
  *                 type: string
- *                 example: thuavanan628@gmail.com
+ *                 example: thuavanan2004@gmail.com
  *               password:
  *                 type: string
- *                 example: 12345678
+ *                 example: 1234567aA
  *     responses:
  *       200:
  *         description: Đăng nhập thành công

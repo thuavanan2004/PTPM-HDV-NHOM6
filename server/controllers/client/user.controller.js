@@ -42,6 +42,7 @@ const bcrypt = require("bcrypt");
  *         description: Có lỗi xảy ra khi lấy thông tin người dùng.
  */
 
+
 // [GET] /user/profile
 module.exports.profile = async (req, res) => {
   try {
