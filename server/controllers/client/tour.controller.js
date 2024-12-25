@@ -611,9 +611,16 @@ module.exports.feature = async (req, res) => {
         },
         attributes: ['dayStart', 'dayReturn', 'stock']
       })
+      const images = await Image.findAll({
+        where: {
+          tourId: tour.id
+        },
+        attributes: ['name', 'source']
+      })
 
       tourObj.departure = departure;
       tourObj.tourDetail = tourDetail;
+      tourObj.images = images;
 
       return tourObj;
     }))

@@ -246,7 +246,7 @@ module.exports.login = async (req, res) => {
       httpOnly: true,
       secure: false,
       path: "/",
-      sameSite: "strict",
+      sameSite: 'strict',
     });
 
 
@@ -370,16 +370,17 @@ module.exports.refreshToken = async (req, res) => {
  */
 // [GET] /auth/logout
 module.exports.logout = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken) {
-    res.status(403).json("Token not required");
-    return;
-  }
-  await RefreshToken.destroy({
-    where: {
-      token: refreshToken,
-    }
-  });
+  // const refreshToken = req.cookies.refreshToken;
+  // console.log(refreshToken);
+  // if (!refreshToken) {
+  //   res.status(403).json("Token not required");
+  //   return;
+  // }
+  // await RefreshToken.destroy({
+  //   where: {
+  //     token: refreshToken,
+  //   }
+  // });
   res.clearCookie("refreshToken");
   res.status(200).json("Logout success");
 }
