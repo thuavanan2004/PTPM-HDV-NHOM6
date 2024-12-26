@@ -16,7 +16,7 @@ const Transportation = require("../../models/transportation.model");
 
 // [GET] /tours/
 module.exports.index = async (req, res) => {
-  const {
+  let {
     budgetId,
     departureFrom,
     fromDate,
@@ -29,6 +29,7 @@ module.exports.index = async (req, res) => {
     let replacements = {};
     var priceQuery = `tour_detail.adultPrice >= 0`;
     if (budgetId) {
+      budgetId = parseInt(budgetId);
       switch (budgetId) {
         case 1:
           priceQuery = `tour_detail.adultPrice < 5000000`;
@@ -511,7 +512,7 @@ module.exports.getTour = async (req, res) => {
     if (categoryCheck.length > 0) {
       var categoryQuery = `categories.slug = :slug`;
     } else {
-      // Nếu không phải category, kiểm tra xem có phải là departure không
+      // Nếu không phải category, kiểm tra xem có phải là destination không
       const destinationTreeQuery = `
         WITH RECURSIVE DestinationTree AS (
           SELECT id, parentId, title, slug

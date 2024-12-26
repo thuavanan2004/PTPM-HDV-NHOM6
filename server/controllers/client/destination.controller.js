@@ -81,12 +81,6 @@ const {
 module.exports.index = async (req, res) => {
   const title = req.query.title;
 
-  if (title) {
-    return res.status(400).json({
-      message: 'Thiếu title.'
-    });
-  }
-
   const titleUnidecode = unidecode(title);
   const titleRegex = `%${titleUnidecode}%`;
 

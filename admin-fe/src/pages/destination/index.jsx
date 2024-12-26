@@ -157,11 +157,11 @@ function Destination() {
       key: "status",
       render: (status, record) => (
         <Tag
-          color={status === true ? "green" : "red"}
+          color={status == 1 ? "green" : "red"}
           onClick={() => handleChangeStatus(record.id, status)}
           className="button-change-status"
         >
-          {status === true ? "Hoạt động" : "Không hoạt động"}
+          {status == 1 ? "Hoạt động" : "Không hoạt động"}
         </Tag>
       ),
     },
