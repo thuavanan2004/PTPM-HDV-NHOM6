@@ -5,7 +5,7 @@ const authMiddleware = require("../../middlewares/client/auth.middlware");
 
 const controllers = require("../../controllers/client/tour.controller");
 
-// router.get("/", controllers.index);
+router.get("/", controllers.index);
 
 router.get("/detail/:slug", controllers.detail);
 

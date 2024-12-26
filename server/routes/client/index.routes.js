@@ -3,6 +3,9 @@ const authRoutes = require("./auth.routes");
 const userRoutes = require("./user.routes");
 const destinationRoutes = require("./destination.routes");
 const orderRoutes = require("./order.routes");
+const departureRoutes = require("./departure.routes");
+const transportationRoutes = require("./transportation.routes");
+const categoryRoutes = require("./categories.routes");
 
 const authMiddleware = require("../../middlewares/client/auth.middlware");
 
@@ -21,6 +24,12 @@ module.exports = (app) => {
   app.use(version + "/user", authMiddleware.requireAuth, userRoutes)
 
   app.use(version + "/destination", destinationRoutes);
+
+  app.use(version + '/departures', departureRoutes);
+
+  app.use(version + '/transportations', transportationRoutes);
+
+  app.use(version + '/categories', categoryRoutes);
 
   app.use(version + "/orders", orderRoutes);
 };

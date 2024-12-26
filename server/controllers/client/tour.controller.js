@@ -16,10 +16,112 @@ const Transportation = require("../../models/transportation.model");
 
 // [GET] /tours/
 module.exports.index = async (req, res) => {
-  const tour = await sequelize.query('SELECT * FROM `tours`', {
-    type: QueryTypes.SELECT,
-  });
-  console.log(tour);
+  const {
+    budgetId,
+    departureFrom,
+    fromDate,
+    transTypeId,
+    text,
+    tourLine
+  } = req.query;
+
+  try {
+    let replacements = {};
+    var priceQuery = `tour_detail.adultPrice >= 0`;
+    if (budgetId) {
+      switch (budgetId) {
+        case 1:
+          priceQuery = `tour_detail.adultPrice < 5000000`;
+          break;
+        case 2:
+          priceQuery = `  tour_detail.adultPrice >= 5000000
+                      AND tour_detail.adultPrice < 10000000`;
+          break;
+        case 3:
+          priceQuery = `tour_detail.adultPrice >= 10000000
+                      AND tour_detail.adultPrice < 20000000`;
+          break;
+        case 4:
+          priceQuery = `tour_detail.adultPrice >= 20000000`;
+          break;
+        default:
+          priceQuery = `tour_detail.adultPrice >= 0`
+          break;
+      }
+    }
+
+    var searchQuery = '';
+    if (text) {
+      const textUnidecode = unidecode(text);
+      const textSlug = textUnidecode.replace(/\s+/g, "-");
+      const textRegex = `%${textSlug}%`;
+      searchQuery = "AND tours.slug LIKE :titleSlug";
+      replacements.titleSlug = textRegex;
+    }
+
+    var departureQuery = '';
+    if (departureFrom) {
+      departureQuery = `AND departureId=${departureFrom}`
+    }
+    var categoryQuery = '';
+    if (tourLine) {
+      categoryQuery = `
+      AND categories.deleted = 0
+      AND categories.status = 1
+      AND categories.id=${tourLine}`
+    }
+
+    var dayQuery = '';
+    if (fromDate) {
+      const [year, month, day] = fromDate.split("-");
+      const dayFormat = new Date(year, month - 1, day);
+      const formattedDate = dayFormat.toISOString().slice(0, 19).replace('T', ' ');
+      dayQuery = `AND tour_detail.dayStart > '${formattedDate}'`
+    }
+
+    var transportationQuery = '';
+    if (transTypeId) {
+      transportationQuery = `AND transportationId=${transTypeId}`
+    }
+    const dayFormat = new Date();
+    const formattedDate = dayFormat.toISOString().slice(0, 19).replace('T', ' ');
+
+    const query = `
+    SELECT tours.id, tours.title, tours.code, tours.slug, tour_detail.adultPrice as price, images.source as image, tour_detail.dayStart, tour_detail.dayReturn, 
+    destination.title as destination, departure.title as departure, transportation.title as transportation
+    FROM tours
+    JOIN tours_categories ON tours.id = tours_categories.tourId
+    JOIN categories ON tours_categories.categoryId = categories.id
+    JOIN destination ON tours.destinationId = destination.id
+    JOIN departure ON tours.departureId = departure.id
+    JOIN transportation ON transportation.id = tours.transportationId
+    JOIN tour_detail ON tour_detail.tourId = tours.id
+    JOIN images ON images.tourId = tours.id
+    WHERE
+      tours.deleted = 0
+      AND tours.status = 1
+      AND DATEDIFF(tour_detail.dayStart, '${formattedDate}') >= 0
+      AND ${priceQuery}
+      ${categoryQuery}
+      ${departureQuery}
+      ${transportationQuery} 
+      ${dayQuery}
+      ${searchQuery}
+    `;
+
+    const tours = await sequelize.query(query, {
+      replacements: replacements,
+      type: QueryTypes.SELECT
+    });
+
+    const transformedData = transformeDataHelper.transformeData(tours);
+    res.status(200).json(transformedData);
+  } catch (error) {
+    console.error("Error fetching category tours:", error);
+    res.status(500).json({
+      error: "Lỗi lấy dữ liệu"
+    });
+  }
 }
 
 /**
@@ -334,7 +436,7 @@ module.exports.detail = async (req, res) => {
 // [GET] /:slug
 module.exports.getTour = async (req, res) => {
   const slug = req.params.slug;
-  const {
+  let {
     budgetId,
     departureFrom,
     fromDate,
@@ -348,6 +450,7 @@ module.exports.getTour = async (req, res) => {
     };
     var priceQuery = `tour_detail.adultPrice >= 0`;
     if (budgetId) {
+      budgetId = parseInt(budgetId);
       switch (budgetId) {
         case 1:
           priceQuery = `tour_detail.adultPrice < 5000000`;
@@ -479,13 +582,6 @@ module.exports.getTour = async (req, res) => {
     });
 
     const transformedData = transformeDataHelper.transformeData(tours);
-
-
-    if (transformedData.length === 0) {
-      return res.status(404).json({
-        message: 'Không tìm thấy tour nào.'
-      });
-    }
 
     res.status(200).json(transformedData);
   } catch (error) {

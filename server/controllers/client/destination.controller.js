@@ -81,7 +81,7 @@ const {
 module.exports.index = async (req, res) => {
   const title = req.query.title;
 
-  if (!title) {
+  if (title) {
     return res.status(400).json({
       message: 'Thiếu title.'
     });
@@ -105,12 +105,6 @@ module.exports.index = async (req, res) => {
       },
       type: QueryTypes.SELECT
     });
-
-    if (destination.length === 0) {
-      return res.status(404).json({
-        message: 'Không lấy được địa điểm nào.'
-      });
-    }
 
     return res.status(200).json(destination);
   } catch (error) {
@@ -237,6 +231,7 @@ module.exports.getTree = async (req, res) => {
         id: node.dataValues.id,
         title: node.dataValues.title,
         image: node.dataValues.image,
+        slug: node.dataValues.slug,
         information: node.dataValues.information,
         status: node.dataValues.status,
         parentId: node.dataValues.parentId,
