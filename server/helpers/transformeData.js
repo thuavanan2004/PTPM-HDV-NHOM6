@@ -16,6 +16,7 @@ module.exports.transformeData = (tours) => {
         slug: item.slug,
         price: item.price,
         image: item.image,
+        category: item.category,
         departure: item.departure,
         destination: item.destination,
         transportation: item.transportation,

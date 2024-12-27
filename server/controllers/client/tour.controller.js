@@ -88,7 +88,7 @@ module.exports.index = async (req, res) => {
     const formattedDate = dayFormat.toISOString().slice(0, 19).replace('T', ' ');
 
     const query = `
-    SELECT tours.id, tours.title, tours.code, tours.slug, tour_detail.adultPrice as price, images.source as image, tour_detail.dayStart, tour_detail.dayReturn, 
+    SELECT tours.id, tours.title, tours.code, tours.slug, categories.title as category, tour_detail.adultPrice as price, images.source as image, tour_detail.dayStart, tour_detail.dayReturn, 
     destination.title as destination, departure.title as departure, transportation.title as transportation
     FROM tours
     JOIN tours_categories ON tours.id = tours_categories.tourId
@@ -254,7 +254,7 @@ module.exports.detail = async (req, res) => {
           tourId: tour.id
         },
         attributes: {
-          exclude: ['id', 'tourId', 'createdAt', 'updatedAt']
+          exclude: ['tourId', 'createdAt', 'updatedAt']
         }
       }),
       Schedule.findAll({
@@ -554,7 +554,7 @@ module.exports.getTour = async (req, res) => {
 
     const query = `
     SELECT tours.id, tours.title, tours.code, tours.slug, tour_detail.adultPrice as price, images.source as image, tour_detail.dayStart, tour_detail.dayReturn, 
-    destination.title as destination, departure.title as departure, transportation.title as transportation
+    destination.title as destination, categories.title as category, departure.title as departure, transportation.title as transportation
     FROM tours
     JOIN tours_categories ON tours.id = tours_categories.tourId
     JOIN categories ON tours_categories.categoryId = categories.id

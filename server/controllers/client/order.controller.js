@@ -197,8 +197,7 @@ module.exports.bookTour = async (req, res) => {
 
     const query = `
     SELECT tours.title, tours.code, images.source, tour_detail.*, destination.title as destination, departure.title as departure
-      FROM favorites
-      JOIN tours ON tours.id = favorites.tourId
+      FROM tours
       JOIN tour_detail ON tour_detail.tourId = tours.id
       JOIN destination ON destination.id = tours.destinationId
       JOIN departure ON departure.id = tours.departureId
